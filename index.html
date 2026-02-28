@@ -1222,21 +1222,65 @@
         }).catch(() => document.getElementById('weather-forecast').innerHTML = '<div style="color:#666;font-size:0.8rem;">ERROR</div>');
     }
 
-    const courts = {
-        "MOGUSA": { name: "百草", address: "日野市百草878-1", tel: "042-591-1212", hours: "9:00～18:00", cost: "¥4,500/h" },
-        "NERIMA": { name: "練馬", address: "練馬区南田中1-15-22", tel: "03-3904-7051", hours: "9:00～21:30", cost: "¥4,000/h" }
+    const courtDatabase = {
+        "MOGUSA": {
+            name: "百草テニスガーデン",
+            address: "〒191-0033 東京都日野市百草878−1",
+            tel: "042-591-1212",
+            hours: "9:00～18:00",
+            costStr: "¥4,500/h",
+            costVal: 4500,
+            mapSrc: "https://googleusercontent.com/maps.google.com/5"
+        },
+        "NERIMA": {
+            name: "練馬ステップイン",
+            address: "〒177-0035 東京都練馬区南田中1丁目15−22",
+            tel: "03-3904-7051",
+            hours: "9:00～21:30",
+            costStr: "¥4,000/h",
+            costVal: 4000,
+            mapSrc: ""
+        }
     };
 
     function renderMapInfo(val) {
         const c = document.getElementById('mapContainer');
-        if (!courts[val]) { c.innerHTML = '<div class="empty-map-state">WAITING FOR NAVI INPUT...</div>'; return; }
-        const d = courts[val];
-        c.innerHTML = `<div class="info-card" style="margin-top:20px;">
-            <div class="info-row"><div class="info-label">SECTOR</div><div class="info-val" style="color:#00ffff;font-weight:bold;">${d.name}</div></div>
-            <div class="info-row"><div class="info-label">ADDRESS</div><div class="info-val">${d.address}</div></div>
-            <div class="info-row"><div class="info-label">TEL</div><div class="info-val">${d.tel}</div></div>
-            <div class="info-row"><div class="info-label">COST</div><div class="info-val">${d.cost}</div></div>
-        </div>`;
+        const data = courtDatabase[val];
+        if (!data) {
+            c.innerHTML = `<div class="empty-map-state">WAITING FOR NAVI INPUT...</div>`;
+            return;
+        }
+        currentCourtCost = data.costVal;
+        const displayAddress = data.address.replace(" ", "<br>");
+        c.innerHTML = `
+            <div class="info-card" style="margin-top:20px;">
+                <div class="info-row"><div class="info-label">SECTOR</div><div class="info-val" style="color:#00ffff; font-weight:bold;">${data.name}</div></div>
+                <div class="info-row">
+                    <div class="info-label">ADDRESS</div>
+                    <div class="info-val">${displayAddress}<button onclick="copyToClipboard('${data.address}')" style="background:rgba(0,255,255,0.1); border:1px solid #00ffff; color:#00ffff; border-radius:4px; cursor:pointer; margin-left:10px; padding:2px 6px; font-size:0.7rem;">📋</button></div>
+                </div>
+                <div class="info-row"><div class="info-label">TEL</div><div class="info-val"><a href="tel:${data.tel}" style="color:#fff;text-decoration:none;">${data.tel}</a></div></div>
+                <div class="info-row"><div class="info-label">HOURS</div><div class="info-val">${data.hours}</div></div>
+                <div class="info-row"><div class="info-label">COST</div><div class="info-val">${data.costStr}</div></div>
+                <div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.2);">
+                    <div style="font-size:0.75rem; color:#00ffff; margin-bottom:5px; letter-spacing:1px;">SPLIT CALCULATOR</div>
+                    <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem;">
+                        COST × <select id="calcHours" onchange="calcSplit()" style="background:rgba(0,0,0,0.5); color:#fff; border:1px solid #555; padding:4px; border-radius:4px;"><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option></select>
+                        ÷ <select id="calcMembers" onchange="calcSplit()" style="background:rgba(0,0,0,0.5); color:#fff; border:1px solid #555; padding:4px; border-radius:4px;"><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+                        = <span id="calcResult" style="color:#00ffff; font-weight:bold; font-size:1.1rem; margin-left:5px;">-</span>
+                    </div>
+                </div>
+            </div>`;
+            calcSplit();
+    }
+
+    function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { showToast("ADDRESS COPIED"); }); }
+    function calcSplit() {
+        const cost = currentCourtCost;
+        const members = parseInt(document.getElementById('calcMembers').value);
+        const hours = parseInt(document.getElementById('calcHours').value);
+        const result = Math.ceil((cost * hours) / members);
+        document.getElementById('calcResult').innerText = '¥' + result.toLocaleString();
     }
 
     // --- Schedule ---
@@ -1307,30 +1351,54 @@
         if(rawAnalysisMatches) rawAnalysisMatches.slice(1).forEach(r => {
             if(currentSector!=='ALL' && r[1]!==currentSector) return;
             if(r[4]==="-") return;
-            const pA = [r[4],r[5]].sort().join(' & '), pB = [r[8],r[9]].sort().join(' & '), sA=parseInt(r[6]), sB=parseInt(r[7]);
+            const pA1=r[4], pA2=r[5], pB1=r[8], pB2=r[9];
+            const pA = [pA1,pA2].sort().join(' & '), pB = [pB1,pB2].sort().join(' & '), sA=parseInt(r[6]), sB=parseInt(r[7]);
             if(!pairStats[pA]) pairStats[pA]={wins:0,losses:0,total:0}; if(!pairStats[pB]) pairStats[pB]={wins:0,losses:0,total:0};
             pairStats[pA].total++; pairStats[pB].total++;
             if(sA>sB) { pairStats[pA].wins++; pairStats[pB].losses++; } else if(sB>sA) { pairStats[pB].wins++; pairStats[pA].losses++; }
+            
+            if(sA===4 && sB===0) { if(pStats[pA1]) pStats[pA1].sniperCount++; if(pStats[pA2]) pStats[pA2].sniperCount++; }
+            if(sA===0 && sB===4) { if(pStats[pB1]) pStats[pB1].sniperCount++; if(pStats[pB2]) pStats[pB2].sniperCount++; }
+            if(Math.abs(sA-sB)===1) {
+                [pA1,pA2,pB1,pB2].forEach(p=>{if(pStats[p]) pStats[p].clutchTotal++});
+                if(sA>sB) { if(pStats[pA1]) pStats[pA1].clutchWins++; if(pStats[pA2]) pStats[pA2].clutchWins++; }
+                else { if(pStats[pB1]) pStats[pB1].clutchWins++; if(pStats[pB2]) pStats[pB2].clutchWins++; }
+            }
         });
 
+        let maxWR = 0, maxSn = 0, maxCR = 0;
         Object.values(pStats).forEach(p => {
             if(p.wins>max.wins) max.wins=p.wins; if(p.games>max.games) max.games=p.games;
             if(p.mvpCount>max.mvpCount) max.mvpCount=p.mvpCount; if(p.matches>max.matches) max.matches=p.matches;
-            const wr = p.matches>0 ? p.wins/p.matches : 0; if(wr>max.bestWR) max.bestWR=wr;
+            const wr = p.matches>0 ? p.wins/p.matches : 0; if(wr>maxWR) maxWR=wr;
+            if(p.sniperCount>maxSn) maxSn=p.sniperCount;
+            const cr = p.clutchTotal>0 ? p.clutchWins/p.clutchTotal : 0;
+            if(cr>maxCR && p.clutchTotal>0) maxCR=cr;
         });
+        max.bestWR=maxWR; max.sniper=maxSn; max.clutchR=maxCR;
         playerStatsGlobal = pStats; playerStatsGlobal._max = max;
 
         document.getElementById('totalMissions').textContent = mDates.size;
         document.getElementById('totalGames').textContent = totalG;
         document.getElementById('avgGames').textContent = mDates.size > 0 ? (totalG / mDates.size).toFixed(1) : "0";
 
-        const sortedP = Object.values(pStats).sort((a,b)=>{ const rA=a.matches>0?a.wins/a.matches:0, rB=b.matches>0?b.wins/b.matches:0; return rA!==rB ? rB-rA : b.wins-a.wins; });
+        const lastD = Array.from(mDates).sort().pop();
+        if(lastD) {
+            const todayLogs = logs[Object.keys(logs).find(k=>k.startsWith(lastD))];
+            if(todayLogs) {
+                let dS={}; todayLogs.records.forEach(r=>{ if(!dS[r.name])dS[r.name]=0; dS[r.name]+=parseInt(r.win); });
+                const best = Object.entries(dS).sort((a,b)=>b[1]-a[1])[0];
+                document.getElementById('latestMvp').textContent = best ? best[0] : '-';
+            }
+        }
+
+        const sortedP = Object.values(pStats).sort((a,b)=>{ const rA=a.matches>0?a.wins/a.matches:0, rB=b.matches>0?b.wins/b.matches:0; if(Math.abs(rB - rA) > 0.0001) return rB - rA; return b.wins-a.wins; });
         
         const tb = document.getElementById('leaderboardBody'); tb.innerHTML="";
         sortedP.forEach((p,i)=>{
             if(!p.name) return;
             const rk = getRankInfo(p.games).current;
-            tb.innerHTML += `<tr onclick="showPlayerModal('${p.name}')"><td class="${i===0?'rank-1':''}">${i+1}</td><td style="text-align:left;padding-left:10px;"><span class="rank-icon">${rk.icon}</span> ${p.name}</td><td>${p.wins}</td><td>${(p.matches>0?(p.wins/p.matches*100).toFixed(1):0)}%</td><td>${p.mvpCount}</td></tr>`;
+            tb.innerHTML += `<tr onclick="showPlayerModal('${p.name}')"><td class="${i===0?'rank-1':''}">${i+1}</td><td style="text-align:left;padding-left:10px;"><span class="rank-icon">${rk.icon}</span> ${p.name} ${getMedals(p, max)}</td><td>${p.wins}</td><td>${(p.matches>0?(p.wins/p.matches*100).toFixed(1):0)}%</td><td>${p.mvpCount}</td></tr>`;
         });
 
         const ptb = document.getElementById('pairRankingBody'); ptb.innerHTML="";
@@ -1345,13 +1413,42 @@
             options: { responsive:true, maintainAspectRatio:false, scales:{y:{max:100,grid:{color:'rgba(255,255,255,0.05)'}},x:{grid:{display:false}}} }
         });
         
+        renderAnalysisLogs(logs);
+
         if(currentSector === 'ALL') { updateSchedule('r1'); updateSchedule('r2'); }
         if(document.getElementById('view-mypage').classList.contains('active')) renderMyPage();
+    }
+
+    function renderAnalysisLogs(logs) {
+        const c = document.getElementById('logsContainer'); c.innerHTML="";
+        Object.keys(logs).sort().reverse().forEach(k => {
+            const l = logs[k];
+            let ds = {};
+            l.records.forEach(r => { if(!ds[r.name]) ds[r.name]={n:r.name,w:0,l:0}; ds[r.name].w+=parseInt(r.win); ds[r.name].l+=parseInt(r.lose); });
+            const sD = Object.values(ds).sort((a,b)=>{ const rA=(a.w+a.l)>0?a.w/(a.w+a.l):0; const rB=(b.w+b.l)>0?b.w/(b.w+b.l):0; if(Math.abs(rB-rA)>0.0001) return rB-rA; return b.w-a.w; });
+            const winner = sD.length > 0 ? sD[0].n : '-';
+            const div = document.createElement('div'); div.className="log-item";
+            div.innerHTML = `<div class="log-header" onclick="this.nextElementSibling.classList.toggle('open')"><div><span class="log-date">${l.date}</span><span class="log-court">@${l.court}</span></div><div style="font-size:0.7rem;color:#aaa;">TOP: ${winner}</div></div><div class="log-content"><table class="standard-table"><thead><tr><th>順位</th><th>名前</th><th>勝敗</th><th>勝率</th></tr></thead><tbody>${sD.map((r,i)=>`<tr><td style="color:${i==0?'#fff':''}">${i+1}</td><td>${r.n}</td><td>${r.w}-${r.l}</td><td>${((r.w+r.l)>0?((r.w/(r.w+r.l))*100).toFixed(0)+'%':'-')}</td></tr>`).join('')}</tbody></table></div>`;
+            c.appendChild(div);
+        });
     }
 
     function getRankInfo(games) {
         for(let i=CREW_RANKS.length-1; i>=0; i--) { if(games>=CREW_RANKS[i].min) return {current:CREW_RANKS[i], next:CREW_RANKS[i+1]||null}; }
         return {current:CREW_RANKS[0], next:CREW_RANKS[1]};
+    }
+
+    function getMedals(p, m) {
+        let h = "";
+        const r = p.matches>0 ? p.wins/p.matches : 0;
+        const cr = p.clutchTotal>0 ? p.clutchWins/p.clutchTotal : 0;
+        if(Math.abs(r - m.bestWR)<0.0001 && p.matches>0) h+='<span class="medal-icon">👑</span>';
+        if(r>=0.7 && p.matches>0) h+='<span class="medal-icon">🔥</span>';
+        if(p.matches===m.matches && m.matches>0) h+='<span class="medal-icon">💪🏼</span>';
+        for(let i=0; i<Math.min(p.mvpCount,3); i++) h+='<span class="medal-icon">⭐</span>';
+        if(p.sniperCount===m.sniper && m.sniper>0) h+='<span class="medal-icon">🎯</span>';
+        if(Math.abs(cr - m.clutchR)<0.0001 && m.clutchR>0 && p.clutchTotal>0) h+='<span class="medal-icon">❤️‍🔥</span>';
+        return h;
     }
 
     function getPlayerWinRate(name) { return playerStatsGlobal[name] && playerStatsGlobal[name].matches > 0 ? playerStatsGlobal[name].wins / playerStatsGlobal[name].matches : 0.5; }
