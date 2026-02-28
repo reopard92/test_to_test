@@ -1335,8 +1335,8 @@
         
         rawAnalysisRankings.slice(1).forEach(r => {
             if(!r[0] || !r[3]) return;
-            const nm = String(r[3]).split(' (')[0], c = r[1], dObj = new Date(r[0]);
-            if(nm.includes("undefined") || nm.trim()==="" || (currentSector!=='ALL' && c!==currentSector)) return;
+            const nm = String(r[3]).split(' (')[0].trim(), c = r[1], dObj = new Date(r[0]);
+            if(!nm || nm === "-" || nm === "undefined" || (currentSector!=='ALL' && c!==currentSector)) return;
             const d = `${dObj.getFullYear()}-${('0'+(dObj.getMonth()+1)).slice(-2)}-${('0'+dObj.getDate()).slice(-2)}`;
             mDates.add(d); totalG += parseInt(r[7]);
             if(!pStats[nm]) pStats[nm] = {name:nm, wins:0, losses:0, games:0, mvpCount:0, matches:0, history:[], sniperCount:0, clutchWins:0, clutchTotal:0};
@@ -1350,7 +1350,7 @@
         let pairStats = {};
         if(rawAnalysisMatches) rawAnalysisMatches.slice(1).forEach(r => {
             if(currentSector!=='ALL' && r[1]!==currentSector) return;
-            if(r[4]==="-") return;
+            if(r[4]==="-" || r[5]==="-" || r[8]==="-" || r[9]==="-") return;
             const pA1=r[4], pA2=r[5], pB1=r[8], pB2=r[9];
             const pA = [pA1,pA2].sort().join(' & '), pB = [pB1,pB2].sort().join(' & '), sA=parseInt(r[6]), sB=parseInt(r[7]);
             if(!pairStats[pA]) pairStats[pA]={wins:0,losses:0,total:0}; if(!pairStats[pB]) pairStats[pB]={wins:0,losses:0,total:0};
@@ -1392,17 +1392,31 @@
             }
         }
 
-        const sortedP = Object.values(pStats).sort((a,b)=>{ const rA=a.matches>0?a.wins/a.matches:0, rB=b.matches>0?b.wins/b.matches:0; if(Math.abs(rB - rA) > 0.0001) return rB - rA; return b.wins-a.wins; });
+        const sortedP = Object.values(pStats)
+            .filter(p => p.matches > 0 && p.name && p.name !== "-")
+            .sort((a, b) => {
+                const rateDiff = (b.wins * a.matches) - (a.wins * b.matches);
+                if (rateDiff !== 0) return rateDiff;
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return b.games - a.games;
+            });
         
         const tb = document.getElementById('leaderboardBody'); tb.innerHTML="";
         sortedP.forEach((p,i)=>{
-            if(!p.name) return;
             const rk = getRankInfo(p.games).current;
             tb.innerHTML += `<tr onclick="showPlayerModal('${p.name}')"><td class="${i===0?'rank-1':''}">${i+1}</td><td style="text-align:left;padding-left:10px;"><span class="rank-icon">${rk.icon}</span> ${p.name} ${getMedals(p, max)}</td><td>${p.wins}</td><td>${(p.matches>0?(p.wins/p.matches*100).toFixed(1):0)}%</td><td>${p.mvpCount}</td></tr>`;
         });
 
+        const pairRanking = Object.entries(pairStats).map(([n,s])=>({name:n,...s}))
+            .filter(p => p.total >= 2 && !p.name.includes('-') && !p.name.includes('undefined'))
+            .sort((a,b) => {
+                const rateDiff = (b.wins * a.total) - (a.wins * b.total);
+                if (rateDiff !== 0) return rateDiff;
+                return b.wins - a.wins;
+            });
+
         const ptb = document.getElementById('pairRankingBody'); ptb.innerHTML="";
-        Object.entries(pairStats).map(([n,s])=>({name:n,...s})).filter(p=>p.total>=2).sort((a,b)=> (b.wins/b.total)-(a.wins/a.total) || b.wins-a.wins).forEach((p,i)=>{
+        pairRanking.forEach((p,i)=>{
             const pct = (p.wins/p.total)*100;
             ptb.innerHTML += `<tr><td class="${i===0?'rank-1':''}">${i+1}</td><td style="font-size:0.8rem;">${p.name}</td><td>${p.wins}-${p.losses}</td><td style="background:linear-gradient(90deg, rgba(0,200,255,0.15) ${pct}%, transparent ${pct}%)">${pct.toFixed(1)}%</td></tr>`;
         });
@@ -1424,8 +1438,16 @@
         Object.keys(logs).sort().reverse().forEach(k => {
             const l = logs[k];
             let ds = {};
-            l.records.forEach(r => { if(!ds[r.name]) ds[r.name]={n:r.name,w:0,l:0}; ds[r.name].w+=parseInt(r.win); ds[r.name].l+=parseInt(r.lose); });
-            const sD = Object.values(ds).sort((a,b)=>{ const rA=(a.w+a.l)>0?a.w/(a.w+a.l):0; const rB=(b.w+b.l)>0?b.w/(b.w+b.l):0; if(Math.abs(rB-rA)>0.0001) return rB-rA; return b.w-a.w; });
+            l.records.forEach(r => { 
+                if (!r.name || r.name === "-" || r.name === "undefined") return;
+                if(!ds[r.name]) ds[r.name]={n:r.name,w:0,l:0}; 
+                ds[r.name].w+=parseInt(r.win); ds[r.name].l+=parseInt(r.lose); 
+            });
+            const sD = Object.values(ds).sort((a,b)=>{ 
+                const rateDiff = (b.w * (a.w+a.l)) - (a.w * (b.w+b.l));
+                if (rateDiff !== 0) return rateDiff;
+                return b.w-a.w; 
+            });
             const winner = sD.length > 0 ? sD[0].n : '-';
             const div = document.createElement('div'); div.className="log-item";
             div.innerHTML = `<div class="log-header" onclick="this.nextElementSibling.classList.toggle('open')"><div><span class="log-date">${l.date}</span><span class="log-court">@${l.court}</span></div><div style="font-size:0.7rem;color:#aaa;">TOP: ${winner}</div></div><div class="log-content"><table class="standard-table"><thead><tr><th>順位</th><th>名前</th><th>勝敗</th><th>勝率</th></tr></thead><tbody>${sD.map((r,i)=>`<tr><td style="color:${i==0?'#fff':''}">${i+1}</td><td>${r.n}</td><td>${r.w}-${r.l}</td><td>${((r.w+r.l)>0?((r.w/(r.w+r.l))*100).toFixed(0)+'%':'-')}</td></tr>`).join('')}</tbody></table></div>`;
