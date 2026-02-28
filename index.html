@@ -924,7 +924,7 @@
         document.getElementById('tab-mode-6').classList.toggle('active', mode === 6);
         
         document.querySelectorAll('.p6-input').forEach(el => {
-            el.style.display = mode === 6 ? 'flex' : 'none';
+            el.style.display = mode === 6 ? '' : 'none';
             if(mode === 5) el.querySelector('select').value = '-';
         });
         
