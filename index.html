@@ -1,143 +1,1380 @@
-import React, { useState } from 'react';
-import { RefreshCw, Sparkles } from 'lucide-react';
-
-const App = () => {
-  const [status, setStatus] = useState('closed'); // 'closed', 'opening', 'open'
-  const [shake, setShake] = useState(false);
-
-  // パックの画像URL（ここを好きな画像に変更してください）
-  const packImageUrl = "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=1000&auto=format&fit=crop";
-
-  const handleOpen = () => {
-    if (status !== 'closed') return;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CODE NAME: 49B - TENNIS</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="TENNIS">
     
-    setShake(true);
-    setTimeout(() => setShake(false), 500);
+    <!-- External Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* =========================================
+           GLOBAL THEME: DEEP SPACE (CODE NAME: 39)
+           ========================================= */
+        body {
+            font-family: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+            background-color: #020204;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 1px, transparent 1.5px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 1.5px),
+                radial-gradient(white, rgba(255,255,255,.1) 1.5px, transparent 2px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            color: #e6e6e6;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+            overscroll-behavior-x: none;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(20, 20, 30, 0.4);
+            padding: 30px;
+            border-radius: 2px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            position: relative;
+            margin-top: 0;
+            min-height: 80vh;
+        }
 
-    setStatus('opening');
-    setTimeout(() => {
-      setStatus('open');
-    }, 800);
-  };
+        /* --- STICKY HEADER --- */
+        .app-header {
+            text-align: center;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky; 
+            top: 0;
+            z-index: 5000;
+            background: rgba(2, 2, 4, 0.85); 
+            backdrop-filter: blur(10px);
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 100%;
+        }
+        h1 {
+            color: #ffffff;
+            font-weight: 300;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+            margin: 0;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+        }
+        .subtitle {
+            font-size: 0.7rem;
+            color: #81d4fa;
+            letter-spacing: 2px;
+            margin-top: 3px;
+        }
 
-  const reset = () => {
-    setStatus('closed');
-  };
+        /* --- BUTTONS --- */
+        .header-btn {
+            position: absolute;
+            top: 20px;
+            background: transparent;
+            border: none;
+            color: #00ffff;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: 0.3s;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+        }
+        .header-btn:active { transform: scale(0.9); text-shadow: 0 0 20px rgba(0, 255, 255, 1); }
+        .header-btn.left { left: 10px; font-weight: bold; font-size: 1.8rem; }
+        .header-btn.right { right: 10px; font-size: 2rem; }
 
-  const JaggedEdge = ({ className, style }) => (
-    <svg 
-      viewBox="0 0 200 20" 
-      className={className} 
-      style={style}
-      preserveAspectRatio="none"
-    >
-      <path 
-        d="M0 20 L20 0 L40 20 L60 0 L80 20 L100 0 L120 20 L140 0 L160 20 L180 0 L200 20 Z" 
-        fill="currentColor" 
-      />
-    </svg>
-  );
+        /* --- USER STATUS DISPLAY --- */
+        .user-status-display {
+            position: absolute; top: 5px; right: 10px; font-size: 0.75rem; letter-spacing: 1px;
+            z-index: 5001; cursor: pointer; text-transform: uppercase; font-family: 'Courier New', monospace;
+        }
+        .status-guest { color: #ff5252; font-weight: bold; text-shadow: 0 0 5px rgba(255, 82, 82, 0.5); }
+        .status-user { color: #ffd700; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
 
-  return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 font-sans text-white">
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
-          <Sparkles className="text-yellow-400" />
-          Card Pack Opener
-        </h1>
-        <p className="text-slate-400">パックをタップして開封してください</p>
-      </div>
+        /* --- SIDE MENU --- */
+        .side-menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 6000;
+            visibility: hidden; opacity: 0; display: flex; justify-content: flex-end;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+        .side-menu-overlay.open { visibility: visible; opacity: 1; }
+        .side-menu-content {
+            width: 80%; max-width: 300px; height: 100%; background: rgba(10, 15, 20, 0.95);
+            border-left: 1px solid rgba(0,255,255,0.3); padding-top: 90px; display: flex; flex-direction: column;
+            transform: translateX(100%); transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .side-menu-overlay.open .side-menu-content { transform: translateX(0); }
+        .menu-item {
+            padding: 20px 30px; color: #fff; font-size: 1.1rem; letter-spacing: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; text-transform: uppercase;
+            opacity: 0; transform: translateX(30px); transition: all 0.4s ease;
+        }
+        .side-menu-overlay.open .menu-item { opacity: 1; transform: translateX(0); }
+        .side-menu-overlay.open .menu-item:nth-child(1) { transition-delay: 0.2s; }
+        .side-menu-overlay.open .menu-item:nth-child(2) { transition-delay: 0.3s; }
+        .menu-item:hover { background: rgba(0,255,255,0.1); padding-left: 40px; color: #00ffff; }
+        .menu-item.active { color: #00ffff; border-left: 4px solid #00ffff; background: rgba(0,255,255,0.05); }
 
-      <div className="relative w-64 h-96 flex items-center justify-center">
+        .view-section { display: none; animation: fadeIn 0.4s ease; padding-top: 20px; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- INPUT STYLES (UPDATED FOR 6 PLAYERS) --- */
+        .input-header-area { position: relative; margin-bottom: 40px; min-height: 80px; }
+        #matchDate { position: absolute; top: 5px; right: 0; color: #fff; font-size: 0.9rem; letter-spacing: 1px; }
+        #courtSelect {
+            display: block; margin: 0 auto; padding: 5px 10px; font-size: 1rem;
+            border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.6); color: #fff; text-align: center; cursor: pointer;
+            width: 100%; max-width: 300px;
+        }
+        #courtSelect:focus { outline: none; border-bottom-color: #fff; background-color: #000; }
+        #courtSelect option { background-color: #000; color: #fff; }
+
+        /* MODE TABS */
+        .mode-tabs-area {
+            display: flex; justify-content: center; gap: 15px; margin-bottom: 25px;
+        }
+        .mode-tab {
+            background: transparent; color: #888; border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 25px; border-radius: 20px; cursor: pointer; transition: 0.3s;
+            font-size: 0.8rem; letter-spacing: 2px;
+        }
+        .mode-tab.active {
+            background: rgba(0, 255, 255, 0.1); color: #00ffff; border-color: #00ffff;
+            font-weight: bold; box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .round-title {
+            color: #fff; font-size: 1rem; font-weight: 300; letter-spacing: 3px;
+            margin-bottom: 20px; border-left: 2px solid rgba(255, 255, 255, 0.5); padding-left: 12px; display: inline-block;
+        }
         
-        {/* カード（中身） */}
-        <div 
-          className={`absolute w-56 h-80 bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 rounded-xl shadow-2xl border-4 border-white/40 flex items-center justify-center transition-all duration-700 ease-out ${
-            status === 'open' ? 'scale-110 opacity-100 rotate-0' : 'scale-90 opacity-0 rotate-6'
-          }`}
-        >
-          <div className="text-center">
-            <div className="text-5xl mb-4">💎</div>
-            <div className="font-black text-2xl tracking-tighter italic drop-shadow-md">LEGENDARY</div>
-          </div>
-        </div>
-
-        {/* パック全体コンテナ */}
-        <div 
-          onClick={handleOpen}
-          className={`absolute inset-0 cursor-pointer transition-transform duration-300 ${shake ? 'animate-bounce' : ''} ${
-            status !== 'closed' ? 'pointer-events-none' : ''
-          }`}
-        >
-          {/* 下部パーツ (3/4) */}
-          <div 
-            className={`absolute bottom-0 left-0 right-0 h-3/4 rounded-b-2xl border-x-4 border-b-4 border-black/20 shadow-xl overflow-hidden transition-all duration-500 ${
-              status === 'open' ? 'opacity-0 translate-y-20' : 'opacity-100'
-            }`}
-            style={{
-              backgroundImage: `url(${packImageUrl})`,
-              backgroundSize: '100% 133.33%', // 全体の高さに合わせて調整
-              backgroundPosition: 'bottom center'
-            }}
-          >
-            {/* 画像の上のオーバーレイ */}
-            <div className="absolute inset-0 bg-black/10" />
-            
-            {/* 切り口のギザギザ（下）- 背景と同じ色にすると馴染みます */}
-            <JaggedEdge className="absolute top-0 left-0 w-full h-4 text-slate-900/40 -translate-y-[1px]" />
-            
-            {/* ロゴなどのオーバーレイテキスト */}
-            <div className="absolute bottom-10 left-0 right-0 text-center pointer-events-none">
-                <div className="text-white font-black text-2xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] italic">BOOSTER</div>
-                <div className="text-white/80 text-xs font-bold tracking-[0.2em]">PREMIUM EDITION</div>
-            </div>
-          </div>
-
-          {/* 上部パーツ (1/4) */}
-          <div 
-            className={`absolute top-0 left-0 right-0 h-1/4 rounded-t-2xl border-x-4 border-t-4 border-black/20 shadow-lg transition-all duration-700 cubic-bezier(0.23, 1, 0.32, 1) ${
-              status === 'opening' || status === 'open' 
-                ? '-translate-y-64 -translate-x-16 -rotate-45 opacity-0' 
-                : 'translate-y-0 opacity-100'
-            }`}
-            style={{
-              backgroundImage: `url(${packImageUrl})`,
-              backgroundSize: '100% 400%', // 全体の高さの4倍
-              backgroundPosition: 'top center'
-            }}
-          >
-            {/* 画像の上のオーバーレイ */}
-            <div className="absolute inset-0 bg-black/10" />
-            
-            {/* 切り口のギザギザ（上） */}
-            <JaggedEdge className="absolute bottom-0 left-0 w-full h-4 text-slate-900/40 rotate-180 translate-y-[1px]" />
-          </div>
-        </div>
-
-      </div>
-
-      {status === 'open' && (
-        <button
-          onClick={reset}
-          className="mt-12 flex items-center gap-2 bg-white/10 hover:bg-white/20 px-6 py-2 rounded-full transition-colors text-sm font-medium border border-white/10"
-        >
-          <RefreshCw size={16} />
-          リセット
-        </button>
-      )}
-
-      <style>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          25% { transform: translateY(-8px) rotate(-0.5deg); }
-          75% { transform: translateY(8px) rotate(0.5deg); }
+        .player-inputs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 25px; }
+        .input-group label { display: block; margin-bottom: 6px; font-size: 0.7rem; color: #666; text-align: center; }
+        select.player-select {
+            width: 100%; padding: 8px 4px; font-size: 0.9rem;
+            background-color: rgba(20, 20, 30, 0.8); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #eee; border-radius: 2px; text-align: center;
         }
-        .animate-bounce {
-          animation: bounce 0.15s ease-in-out infinite;
+        select.player-select:disabled { opacity: 0.3; }
+        select.player-select option { background-color: #000; color: #fff; }
+        select.player-select option:disabled { color: #555 !important; background-color: #111; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; background: transparent; }
+        th { background: transparent; color: #888; font-weight: 300; font-size: 0.75rem; padding: 10px; text-align: center; }
+        td { padding: 12px 5px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.03); font-size: 0.9rem; color: #ddd; }
+        .rank-1 { color: #fff; font-weight: bold; text-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+        .rest-highlight { color: #e57373; font-size: 0.85rem; padding: 2px 8px; border: none; line-height: 1.4; }
+
+        .score-select { 
+            width: 45px; padding: 5px; text-align: center; font-size: 1rem; 
+            background-color: #222; border: 1px solid #666; color: #fff; border-radius: 2px; 
         }
-      `}</style>
+        .score-select:focus { outline: none; border-color: #00ffff; background-color: #000; }
+        .score-select.filled { background-color: rgba(0, 255, 255, 0.15); border-color: rgba(0, 255, 255, 0.6); font-weight: bold; color: #00ffff; }
+
+        .winner { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent); color: #fff !important; font-weight: bold; text-shadow: 0 0 8px rgba(255, 255, 255, 0.5); }
+        .loser { color: #555 !important; }
+        .loser select { opacity: 0.3; }
+        
+        .header-ctrl-area { position: absolute; top: 0; right: 0; margin-top: 60px; display: flex; gap: 10px; }
+        .btn-ctrl { background: transparent; color: #777; border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 0.75rem; margin-left: 10px; }
+        .btn-ctrl.unlocked { border-color: #69f0ae; color: #69f0ae; }
+        .btn-send { background: linear-gradient(135deg, #303f9f 0%, #7b1fa2 100%); color: #fff; border: none; padding: 15px 40px; border-radius: 2px; cursor: pointer; font-size: 0.95rem; letter-spacing: 3px; width: 100%; max-width: 350px; margin: 60px auto 0 auto; display: block; box-shadow: 0 10px 30px rgba(48, 63, 159, 0.3); }
+        .btn-send:hover { background: linear-gradient(135deg, #3f51b5 0%, #8e24aa 100%); }
+        .btn-send:disabled { background: #333; color: #777; cursor: not-allowed; box-shadow: none; }
+
+        /* --- ANALYSIS & DASHBOARD --- */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: rgba(20, 20, 30, 0.4); padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; font-weight: bold; }
+        .stat-value { font-size: 1.8rem; color: #fff; font-weight: 300; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .stat-value.highlight { color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.6); }
+        .section-title { font-size: 1.1rem; color: #fff; font-weight: 300; letter-spacing: 2px; margin-bottom: 20px; border-left: 3px solid #00ffff; padding-left: 15px; }
+        
+        .medal-icon { display: inline-block; margin-left: 4px; font-size: 0.9rem; filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+        .rank-icon { display: inline-block; margin-right: 6px; font-size: 1rem; filter: drop-shadow(0 0 5px rgba(0,255,255,0.6)); }
+        .medal-legend, .rank-legend { text-align: center; color: #888; font-size: 0.7rem; margin-bottom: 20px; line-height: 1.8; }
+        .rank-legend { color: #00ffff; border-top: 1px solid rgba(0, 255, 255, 0.1); padding-top: 10px; margin-top: -10px; }
+        
+        .log-item { background: rgba(20, 20, 30, 0.4); border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 5px; }
+        .log-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .log-header:hover { background: rgba(255, 255, 255, 0.05); }
+        .log-date { color: #fff; font-weight: bold; font-size: 1rem; }
+        .log-content { display: none; padding: 15px; background: rgba(0, 0, 0, 0.3); }
+        .log-content.open { display: block; animation: fadeIn 0.3s; }
+        
+        .chart-container { position: relative; height: 250px; width: 100%; margin-bottom: 30px; }
+        .sector-select {
+            padding: 8px 15px; font-size: 1rem; background-color: rgba(0, 0, 0, 0.6); color: #00ffff;
+            border: 1px solid rgba(0, 255, 255, 0.5); border-radius: 4px; outline: none; cursor: pointer; 
+            width: 100%; max-width: 300px; display: block; margin: 0 auto;
+        }
+
+        /* --- MY PAGE STYLES --- */
+        .mypage-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .mypage-avatar-large {
+            width: 80px; height: 80px; background: rgba(0,0,0,0.5); border: 2px solid #00ffff; border-radius: 50%;
+            margin: 0 auto 15px auto; display: flex; justify-content: center; align-items: center;
+            font-size: 2.5rem; box-shadow: 0 0 20px rgba(0,255,255,0.3); cursor: pointer; overflow: hidden; position: relative;
+        }
+        .mypage-avatar-large:hover::after {
+            content: 'EDIT'; position: absolute; bottom: 0; left: 0; width: 100%;
+            background: rgba(0,255,255,0.5); color: #000; font-size: 0.6rem; font-weight: bold; padding: 2px 0;
+        }
+        .mypage-name { font-size: 1.5rem; color: #fff; letter-spacing: 2px; font-weight: bold; }
+        .mypage-title { color: #00ffff; font-size: 0.9rem; letter-spacing: 1px; margin-top: 5px; }
+        .mypage-coin-area {
+            background: linear-gradient(90deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+            border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 25px;
+        }
+        .coin-val { font-size: 1.8rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .coin-label { font-size: 0.7rem; color: #aaa; letter-spacing: 2px; }
+        
+        .btn-bonus {
+            background: linear-gradient(135deg, #ffd700 0%, #ff6f00 100%); color: #000; font-weight: bold;
+            border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; margin-top: 10px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); transition: 0.3s; font-size: 0.8rem; letter-spacing: 1px;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-bonus:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
+        .btn-bonus:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 25px rgba(255, 215, 0, 0.7); }
+        .btn-logout {
+            background: transparent; color: #ff5252; border: 1px solid #ff5252;
+            padding: 8px 25px; margin-top: 30px; border-radius: 20px; cursor: pointer; transition: 0.3s; font-size: 0.8rem;
+        }
+        .btn-logout:hover { background: rgba(255,82,82,0.1); }
+
+        /* --- FOOTER --- */
+        .bottom-nav { 
+            position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 10, 15, 0.95); 
+            backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.15); 
+            display: flex; justify-content: space-around; padding: 15px 0 30px 0; z-index: 1000; transition: transform 0.3s ease; 
+        }
+        .bottom-nav.hidden { transform: translateY(100%); }
+        .nav-item { background: none; border: none; color: #555; font-size: 0.6rem; display: flex; flex-direction: column; align-items: center; cursor: pointer; width: 20%; }
+        .nav-icon { font-size: 1.2rem; margin-bottom: 3px; filter: grayscale(100%) brightness(0.7); }
+        .nav-item.active { color: #fff; }
+        .nav-item.active .nav-icon { filter: grayscale(0%) brightness(1.5) drop-shadow(0 0 5px rgba(0,255,255,0.8)); }
+
+        /* --- WEATHER & SCHEDULE --- */
+        .weather-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); min-height: 120px; align-items: flex-start; }
+        .weather-container::-webkit-scrollbar { display: none; }
+        .weather-card { min-width: 80px; background: rgba(20, 30, 40, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        .weather-card.empty-slot { height: 80px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.1); }
+        .weather-date { font-size: 0.7rem; color: #888; margin-bottom: 5px; letter-spacing: 1px; }
+        .weather-icon { font-size: 1.5rem; margin-bottom: 5px; }
+        .weather-temp { font-size: 0.8rem; color: #fff; }
+        .weather-rain { font-size: 0.7rem; color: #81d4fa; margin-top: 2px; }
+        .weather-card.today { border-color: #00ffff; background: rgba(0, 255, 255, 0.05); }
+
+        .schedule-banner-container { margin: 20px 0 30px 0; text-align: center; }
+        .schedule-banner { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 255, 255, 0.05)); border: 1px solid rgba(0, 255, 255, 0.4); border-radius: 8px; padding: 15px 20px; text-decoration: none; color: #fff; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0, 255, 255, 0.1); max-width: 400px; margin: 0 auto; }
+        .schedule-banner:hover { background: rgba(0, 255, 255, 0.15); border-color: #00ffff; box-shadow: 0 0 25px rgba(0, 255, 255, 0.3); transform: translateY(-2px); }
+        .banner-icon { font-size: 2rem; margin-right: 15px; filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.5)); }
+        .banner-title { font-size: 1.1rem; font-weight: bold; color: #00ffff; letter-spacing: 1px; margin-bottom: 2px; }
+        .banner-sub { font-size: 0.75rem; color: #aaa; }
+
+        .month-tabs-area { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .month-tab { background: rgba(255,255,255,0.1); color: #888; padding: 6px 15px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        .month-tab.active { background: #00ffff; color: #000; font-weight: bold; box-shadow: 0 0 10px rgba(0,255,255,0.3); }
+        .schedule-list { list-style: none; padding: 0; margin: 0; min-height: 400px; }
+        .schedule-item { display: flex; justify-content: space-between; align-items: center; padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: background 0.2s; }
+        .schedule-item.top-attendance { background: linear-gradient(90deg, rgba(0,255,255,0.1), transparent); border-left: 3px solid #00ffff; }
+        .schedule-date { font-size: 1.1rem; color: #fff; letter-spacing: 1px; display: flex; align-items: center; }
+        .schedule-counts { display: flex; gap: 15px; font-size: 1rem; color: #ccc; align-items: center; }
+
+        /* --- MAP & INFO --- */
+        .map-frame { position: relative; width: 100%; padding-bottom: 75%; height: 0; overflow: hidden; border: 1px solid #00ffff; box-shadow: 0 0 15px rgba(0,255,255,0.15); margin-bottom: 20px; background: #000; }
+        .map-frame iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; filter: invert(100%) hue-rotate(180deg) brightness(0.85) contrast(1.2) grayscale(0.5); }
+        .info-card { background: rgba(20, 30, 40, 0.6); border: 1px solid rgba(255,255,255,0.15); padding: 20px; border-left: 3px solid #00ffff; animation: fadeIn 0.5s ease; }
+        .info-row { display: flex; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+        .info-label { width: 80px; color: #00ffff; font-size: 0.75rem; letter-spacing: 1px; align-self: center; }
+        .info-val { color: #fff; font-size: 0.9rem; flex: 1; word-break: break-all; }
+        .empty-map-state { text-align: center; padding: 60px 0; color: #666; font-family: 'Courier New', monospace; letter-spacing: 2px; border: 1px dashed rgba(255,255,255,0.1); }
+
+        /* --- MODALS --- */
+        #playerModal, #scheduleDetailModal, #loginModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 6000; justify-content: center; align-items: center; }
+        .modal-content { background: rgba(15, 20, 30, 0.95); border: 1px solid #00ffff; box-shadow: 0 0 30px rgba(0, 255, 255, 0.2); width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative; }
+        .close-btn { position: absolute; top: 15px; right: 15px; color: #fff; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .modal-title { color: #fff; font-weight: 300; text-align: center; font-size: 1.5rem; margin-bottom: 10px; letter-spacing: 2px; }
+        .rank-info-area { background: rgba(255,255,255,0.03); padding: 15px; margin-bottom: 25px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .rank-name { font-size: 1.1rem; color: #00ffff; letter-spacing: 2px; margin-bottom: 5px; font-weight: 300; }
+        .rank-progress-text { font-size: 0.8rem; color: #aaa; margin-bottom: 8px; }
+        .rank-bar-bg { width: 100%; height: 2px; background: #333; }
+        .rank-bar-fill { height: 100%; background: #00ffff; width: 0%; box-shadow: 0 0 10px #00ffff; }
+
+        #loginPassInput { width: 80%; padding: 10px; text-align: center; background: rgba(0,0,0,0.5); border: 1px solid #00ffff; color: #fff; font-size: 1.2rem; letter-spacing: 4px; margin-bottom: 20px; border-radius: 4px; }
+        #loginPassInput:focus { outline: none; box-shadow: 0 0 15px rgba(0,255,255,0.4); }
+        .btn-login { background: #00ffff; color: #000; border: none; padding: 10px 40px; font-weight: bold; letter-spacing: 2px; cursor: pointer; box-shadow: 0 0 15px rgba(0,255,255,0.5); transition: 0.3s; margin-bottom: 15px; }
+        .btn-guest { background: transparent; color: #ff5252; border: 1px solid #ff5252; padding: 5px 20px; font-size: 0.8rem; cursor: pointer; transition: 0.3s; }
+
+        #toast { visibility: hidden; min-width: 250px; background-color: rgba(0,0,0,0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2); text-align: center; border-radius: 2px; padding: 16px; position: fixed; z-index: 7000; left: 50%; bottom: 90px; transform: translateX(-50%); opacity: 0; transition: 0.4s; }
+        #toast.show { visibility: visible; opacity: 1; bottom: 100px; }
+        #loadingScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020204; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.8s ease; }
+        .loader-text { font-family: 'Courier New', Courier, monospace; color: #00ffff; font-size: 1.2rem; letter-spacing: 4px; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .loader-bar { width: 200px; height: 1px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; }
+        .loader-bar::after { content: ''; position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: #fff; box-shadow: 0 0 10px #fff; animation: load 2s ease-in-out forwards; }
+        @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+        .no-data { text-align: center; padding: 20px; font-size: 0.8rem; color: #666; }
+
+        /* --- SMARTPHONE OPTIMIZATION --- */
+        @media (max-width: 600px) {
+            .container { padding: 5px; padding-bottom: 80px; }
+            .input-header-area { display: grid; grid-template-columns: 1fr 1fr; row-gap: 15px; padding-bottom: 10px; min-height: auto; margin-bottom: 20px; }
+            #matchDate { position: relative; top: auto; right: auto; grid-column: 2; text-align: right; font-size: 0.8rem; margin-top: 8px; }
+            #courtSelect { grid-column: 1 / 3; width: 80%; max-width: 300px; margin: 0 auto; display: block; text-align: center; text-align-last: center; }
+            .header-ctrl-area { position: relative; top: auto; right: auto; margin-top: 0; grid-column: 1 / 3; justify-content: flex-end; }
+            
+            /* 6プレイヤー対応グリッド */
+            .player-inputs { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .input-group { display: flex; align-items: center; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 4px; }
+            .input-group label { margin-bottom: 0; margin-right: 5px; width: 15px; font-size: 0.7rem; }
+            
+            h1 { font-size: 1.4rem; padding-left: 0; text-align: center; }
+
+            #r1_matchTableBody, #r2_matchTableBody { display: block; width: 100%; }
+            table { width: 100% !important; display: block; }
+            .standard-table { display: table !important; width: 100% !important; box-sizing: border-box; }
+            .standard-table thead { display: table-header-group !important; }
+            .standard-table tbody { display: table-row-group !important; }
+            .standard-table tr { display: table-row !important; width: auto !important; grid-template-columns: none !important; border: none !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
+            .standard-table th, .standard-table td { display: table-cell !important; width: auto !important; text-align: center !important; border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+
+            .input-match-table thead { display: none; }
+            #r1_matchTableBody tr, #r2_matchTableBody tr {
+                display: grid; grid-template-columns: 60px 1fr 60px; grid-template-rows: auto auto auto auto auto;
+                gap: 5px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;
+                background: rgba(20,20,30,0.6); padding: 10px; width: 100% !important; box-sizing: border-box; 
+            }
+            #r1_matchTableBody td, #r2_matchTableBody td { display: block; width: 100%; box-sizing: border-box; border: none; padding: 2px 0; text-align: center; }
+            #r1_matchTableBody td:nth-of-type(1), #r2_matchTableBody td:nth-of-type(1) { grid-row: 1; grid-column: 1 / 4; text-align: center; font-size: 0.8rem; color: #888; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; margin-bottom: 5px; }
+            #r1_matchTableBody td:nth-of-type(2), #r2_matchTableBody td:nth-of-type(2) { grid-row: 2; grid-column: 1 / 4; text-align: left !important; font-size: 0.9rem; color: #fff; }
+            #r1_matchTableBody td:nth-of-type(3), #r2_matchTableBody td:nth-of-type(3) { grid-row: 3; grid-column: 1; text-align: left; display: flex; align-items: center; }
+            #r1_matchTableBody td:nth-of-type(4), #r2_matchTableBody td:nth-of-type(4) { grid-row: 3; grid-column: 2; text-align: center; display: flex; justify-content: center; align-items: center; width: 100%; }
+            #r1_matchTableBody td:nth-of-type(4) div, #r2_matchTableBody td:nth-of-type(4) div { width: 100%; display: flex; justify-content: center; gap: 5px; }
+            #r1_matchTableBody td:nth-of-type(5), #r2_matchTableBody td:nth-of-type(5) { grid-row: 3; grid-column: 3; text-align: right; display: flex; justify-content: flex-end; align-items: center; }
+            #r1_matchTableBody td:nth-of-type(6), #r2_matchTableBody td:nth-of-type(6) { grid-row: 4; grid-column: 1 / 4; text-align: right !important; font-size: 0.9rem; color: #fff; }
+            #r1_matchTableBody td:nth-of-type(7), #r2_matchTableBody td:nth-of-type(7) { grid-row: 5; grid-column: 1 / 4; text-align: center; margin-top: 10px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.05); }
+            #r1_matchTableBody td:nth-of-type(7)::before, #r2_matchTableBody td:nth-of-type(7)::before { content: "REST: "; color: #888; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loadingScreen">
+    <div class="loader-text">SYSTEM INITIALIZING...</div>
+    <div class="loader-bar"></div>
+</div>
+
+<div id="sideMenu" class="side-menu-overlay" onclick="closeSideMenu(event)">
+    <div class="side-menu-content">
+        <div class="menu-item active" onclick="selectAppMode('tennis')">🎾 TENNIS</div>
+        <div class="menu-item" onclick="showMyPage()">👤 MY PAGE</div>
     </div>
-  );
-};
+</div>
 
-export default App;
+<div class="container">
+    <header class="app-header">
+        <div id="currentUserDisplay" class="user-status-display" onclick="showMyPage()">GUEST</div>
+        <div class="header-btn left" onclick="location.reload()">↻</div>
+        <h1 id="pageTitle">MATCH INPUT</h1>
+        <div class="subtitle" id="appSubtitle">DEEP SPACE INTEGRATED SYSTEM</div>
+        <div class="header-btn right" onclick="toggleSideMenu()">≡</div>
+    </header>
+    
+    <!-- TOP SECTION -->
+    <div id="view-top" class="view-section">
+        <div class="section-title">WEATHER FORECAST</div>
+        <div id="weather-forecast" class="weather-container">
+            <div class="weather-card"><div class="spinning">❖</div></div>
+        </div>
+
+        <div class="section-title">COURT NAVIGATION</div>
+        <div class="sector-filter-area" style="text-align:center; margin-bottom:20px;">
+            <select id="mapSectorSelect" class="sector-select" onchange="renderMapInfo(this.value)">
+                <option value="-">SELECT SECTOR</option>
+                <option value="MOGUSA">百草テニスガーデン</option>
+                <option value="NERIMA">練馬ステップイン</option>
+            </select>
+        </div>
+        <div id="mapContainer">
+            <div class="empty-map-state">WAITING FOR NAVI INPUT...</div>
+        </div>
+    </div>
+
+    <!-- MY PAGE SECTION -->
+    <div id="view-mypage" class="view-section">
+        <div id="myPageContent"></div>
+        <input type="file" id="avatarInput" hidden accept="image/*" onchange="handleAvatarUpload(this)">
+    </div>
+
+    <!-- MATCH INPUT SECTION -->
+    <div id="view-match" class="view-section active">
+        <div class="input-header-area">
+            <div id="matchDate"></div>
+            <select id="courtSelect" onchange="saveState()" disabled>
+                <option value="-">-</option>
+                <option value="練馬ステップイン">練馬ステップイン</option>
+                <option value="百草テニスガーデン">百草テニスガーデン</option>
+                <option value="モリパーク テニスガーデン">モリパーク テニスガーデン</option>
+                <option value="白子町">白子町</option>
+            </select>
+            <div class="header-ctrl-area">
+                 <button id="editBtn" class="btn-ctrl" onclick="toggleEditMode()">EDIT</button>
+                 <button id="resetBtn" class="btn-ctrl" onclick="secureReset()" disabled>RESET</button>
+            </div>
+        </div>
+
+        <!-- MODE TABS (5 / 6 PLAYERS) -->
+        <div class="mode-tabs-area">
+            <button id="tab-mode-5" class="mode-tab active" onclick="switchPlayerMode(5)">5 PLAYERS</button>
+            <button id="tab-mode-6" class="mode-tab" onclick="switchPlayerMode(6)">6 PLAYERS</button>
+        </div>
+
+        <!-- ROUND 1 -->
+        <div class="round-title">ROUND 01</div>
+        <div class="player-inputs">
+            <div class="input-group"><label>I</label><select id="r1_p1" class="player-select" onchange="updateSchedule('r1')" disabled></select></div>
+            <div class="input-group"><label>II</label><select id="r1_p2" class="player-select" onchange="updateSchedule('r1')" disabled></select></div>
+            <div class="input-group"><label>III</label><select id="r1_p3" class="player-select" onchange="updateSchedule('r1')" disabled></select></div>
+            <div class="input-group"><label>IV</label><select id="r1_p4" class="player-select" onchange="updateSchedule('r1')" disabled></select></div>
+            <div class="input-group"><label>V</label><select id="r1_p5" class="player-select" onchange="updateSchedule('r1')" disabled></select></div>
+            <div class="input-group p6-input" style="display:none;"><label>VI</label><select id="r1_p6" class="player-select" onchange="updateSchedule('r1')" disabled></select></div>
+        </div>
+        <table class="input-match-table">
+            <thead><tr><th>No.</th><th>PAIR A</th><th>G</th><th></th><th>G</th><th>PAIR B</th><th>REST</th></tr></thead>
+            <tbody id="r1_matchTableBody"></tbody>
+        </table>
+        <div style="text-align: center;" class="ranking-area"><h3>RANKING // 1st Phase</h3></div>
+        <table class="standard-table">
+            <thead><tr><th>#</th><th>NAME</th><th>WIN</th><th>RATE</th><th>G</th></tr></thead>
+            <tbody id="r1_rankingTableBody"></tbody>
+        </table>
+
+        <!-- ROUND 2 -->
+        <div class="round-title">ROUND 02</div>
+        <div class="player-inputs">
+            <div class="input-group"><label>I</label><select id="r2_p1" class="player-select" onchange="updateSchedule('r2')" disabled></select></div>
+            <div class="input-group"><label>II</label><select id="r2_p2" class="player-select" onchange="updateSchedule('r2')" disabled></select></div>
+            <div class="input-group"><label>III</label><select id="r2_p3" class="player-select" onchange="updateSchedule('r2')" disabled></select></div>
+            <div class="input-group"><label>IV</label><select id="r2_p4" class="player-select" onchange="updateSchedule('r2')" disabled></select></div>
+            <div class="input-group"><label>V</label><select id="r2_p5" class="player-select" onchange="updateSchedule('r2')" disabled></select></div>
+            <div class="input-group p6-input" style="display:none;"><label>VI</label><select id="r2_p6" class="player-select" onchange="updateSchedule('r2')" disabled></select></div>
+        </div>
+        <table class="input-match-table">
+            <thead><tr><th>No.</th><th>PAIR A</th><th>G</th><th></th><th>G</th><th>PAIR B</th><th>REST</th></tr></thead>
+            <tbody id="r2_matchTableBody"></tbody>
+        </table>
+        <div style="text-align: center;" class="ranking-area"><h3>RANKING // 2nd Phase</h3></div>
+        <table class="standard-table">
+            <thead><tr><th>#</th><th>NAME</th><th>WIN</th><th>RATE</th><th>G</th></tr></thead>
+            <tbody id="r2_rankingTableBody"></tbody>
+        </table>
+
+        <div style="text-align: center; margin-top:30px;" class="ranking-area"><h3 style="color:#fff;">TOTAL RANKING (TODAY)</h3></div>
+        <table class="standard-table">
+            <thead><tr><th>#</th><th>NAME</th><th>WIN</th><th>RATE</th><th>G</th></tr></thead>
+            <tbody id="total_input_rankingTableBody"></tbody>
+        </table>
+
+        <button id="sendButton" class="btn-send" onclick="sendToSpreadsheet()" disabled>TRANSMIT DATA</button>
+    </div>
+
+    <!-- DASHBOARD SECTION -->
+    <div id="view-dashboard" class="view-section">
+        <div class="section-title">活動状況サマリー</div>
+        <div class="dashboard-grid">
+            <div class="stat-card"><div class="stat-label">開催回数</div><div class="stat-value highlight" id="totalMissions">0</div></div>
+            <div class="stat-card"><div class="stat-label">総ゲーム数</div><div class="stat-value" id="totalGames">0</div></div>
+            <div class="stat-card"><div class="stat-label">平均ゲーム</div><div class="stat-value" id="avgGames">-</div></div>
+            <div class="stat-card"><div class="stat-label">最新MVP</div><div class="stat-value" id="latestMvp">-</div></div>
+        </div>
+        <div class="section-title">勝率分析 (TOP 5)</div>
+        <div class="chart-container"><canvas id="winRateChart"></canvas></div>
+        <div class="section-title" style="margin-top:40px;">対戦履歴ログ</div>
+        <div id="logsContainer"></div>
+    </div>
+
+    <!-- RANKING SECTION -->
+    <div id="view-ranking" class="view-section">
+        <div class="section-title">通算個人ランキング</div>
+        <div class="sector-filter-area" style="text-align:center; margin-bottom:20px;">
+            <select id="sectorSelect" class="sector-select" onchange="filterRanking(this.value)">
+                <option value="ALL">ALL SECTORS</option>
+                <option value="練馬ステップイン">練馬</option>
+                <option value="百草テニスガーデン">百草</option>
+                <option value="モリパーク テニスガーデン">モリパーク</option>
+                <option value="白子町">白子町</option>
+            </select>
+        </div>
+        <table>
+            <thead><tr><th>順位</th><th>名前</th><th>勝利数</th><th>勝率</th><th>MVP</th></tr></thead>
+            <tbody id="leaderboardBody"></tbody>
+        </table>
+        <div class="medal-legend"><span>👑 最高勝率</span> <span>🔥 勝率70%↑</span> <span>💪🏼 最多試合</span> <span>⭐ MVP</span><br><span>🎯 完封最多</span> <span>❤️‍🔥 接戦勝率No.1</span></div>
+        <div class="rank-legend"><span>🌑 候補生 (0~)</span> <span>🛸 パイロット (100~)</span> <span>🛰️ 士官 (300~)</span><br><span>🚀 指揮官 (600~)</span> <span>🪐 艦長 (1000~)</span> <span>🌌 提督 (2000~)</span></div>
+        
+        <div style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+            <div class="section-title">最強ペアランキング</div>
+            <table class="standard-table">
+                <thead><tr><th>順位</th><th>ペア</th><th>勝敗</th><th>勝率</th></tr></thead>
+                <tbody id="pairRankingBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SCHEDULE SECTION -->
+    <div id="view-schedule" class="view-section">
+        <div class="section-title">MISSION SCHEDULE</div>
+        <div class="schedule-banner-container">
+            <a href="https://liff.line.me/2008858372-NgwrDQlQ" target="_blank" class="schedule-banner">
+                <div class="banner-icon">📅</div>
+                <div class="banner-text">
+                    <div class="banner-title">日程調整を入力する</div>
+                    <div class="banner-sub">LINE公式アカウントへ移動 </div>
+                </div>
+            </a>
+        </div>
+        <div id="scheduleTabs" class="month-tabs-area"></div>
+        <div id="scheduleList" class="schedule-list"><div style="padding:20px; text-align:center; color:#888;">LOADING DATA...</div></div>
+    </div>
+</div>
+
+<!-- FOOTER NAV -->
+<nav id="bottomNav" class="bottom-nav">
+    <button class="nav-item active" onclick="switchMainView('top')"><span class="nav-icon">🏠</span>TOP</button>
+    <button class="nav-item" onclick="switchMainView('match')"><span class="nav-icon">🎾</span>INPUT</button>
+    <button class="nav-item" onclick="switchMainView('dashboard')"><span class="nav-icon">📈</span>DATA</button>
+    <button class="nav-item" onclick="switchMainView('ranking')"><span class="nav-icon">👑</span>RANK</button>
+    <button class="nav-item" onclick="switchMainView('schedule')"><span class="nav-icon">📅</span>SCHEDULE</button>
+</nav>
+
+<!-- MODALS -->
+<div id="playerModal" onclick="closeModal(event)">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal(event)">×</button>
+        <div class="modal-title" id="modalPlayerName"></div>
+        <div id="rankInfoArea" class="rank-info-area"></div>
+        <div class="modal-medals" id="modalMedals"></div>
+        <div class="section-title" style="font-size:0.9rem;">能力チャート</div>
+        <div class="chart-container" style="height:200px; margin-bottom:15px;"><canvas id="radarChart"></canvas></div>
+        <div class="section-title" style="font-size:0.9rem;">勝率推移</div>
+        <div class="chart-container" style="height:150px; margin-bottom:0;"><canvas id="historyChart"></canvas></div>
+    </div>
+</div>
+
+<div id="scheduleDetailModal" onclick="closeModal(event)">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal(event)">×</button>
+        <div class="detail-header">
+            <div class="detail-date" id="modalScheduleDate"></div>
+            <div style="font-size:0.8rem; color:#888;">回答状況</div>
+        </div>
+        <ul class="detail-list" id="modalScheduleList" style="list-style:none; padding:0; margin:0;"></ul>
+    </div>
+</div>
+
+<div id="loginModal">
+    <div class="modal-content" style="text-align:center; max-width:320px;">
+        <button class="close-btn" onclick="document.getElementById('loginModal').style.display='none'">×</button>
+        <div class="modal-title">ACCESS LOGIN</div>
+        <div style="margin-bottom:20px; color:#aaa; font-size:0.8rem;">ENTER PASSCODE TO IDENTIFY</div>
+        <input type="number" id="loginPassInput" placeholder="PASSCODE">
+        <button class="btn-login" onclick="attemptLogin()">AUTHENTICATE</button>
+        <div style="margin-top:20px;">
+            <button class="btn-guest" onclick="enableGuestMode()">CONTINUE AS GUEST</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- JavaScript -->
+<script>
+    // --- URLs & Global Config ---
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzoybbIaxOq4EtWaBkvdPNzkN1_7lmFRnAQLbnu6A40YUQdbzX6gTfIY5CznZs13GYxZw/exec";
+    const SCHEDULE_GAS_URL = "https://script.google.com/macros/s/AKfycbxkywDklSyaMf93hYhG-ULAyAEQ1qHGgaYjNewTxX34pfySOZKYsbwehygCccEvnchB/exec";
+    const COIN_MANAGER_URL = "https://script.google.com/macros/s/AKfycbzIKbpFP8mr9XWi0B_WFswRpVZ5o_SGnOFOYRdPMnLP4kK-e61CCXLN3bUod4eNodQl/exec"; 
+    const AUTH_SHEET_ID = '18J_8wm-Qc3yRV-eEwdtB_55CYOAsVGy26AIU7aCvSQw';
+    const AUTH_SHEET_GID = '835965305';
+    
+    const members = ["周平", "すが", "凌矢", "祐介", "志村", "カトケン", "小田"];
+    const STORAGE_KEY = 'tennis_match_data_v7_holo';
+    const LOGIN_KEY = 'tennis_user_auth';
+
+    const CREW_RANKS = [
+        { name: '候補生',     min: 0,   icon: '🌑' },
+        { name: 'パイロット', min: 100,  icon: '🛸' },
+        { name: '士官',       min: 300,  icon: '🛰️' },
+        { name: '指揮官',     min: 600,  icon: '🚀' },
+        { name: '艦長',       min: 1000, icon: '🪐' },
+        { name: '提督',       min: 2000, icon: '🌌' }
+    ];
+
+    // --- State Variables ---
+    let isEditMode = false;
+    let isLoading = false;
+    let currentPlayerMode = 5; // 5 or 6
+    let playerStatsGlobal = {};
+    let radarChartInstance = null;
+    let historyChartInstance = null;
+    let winRateChartInstance = null;
+    let currentCourtCost = 4500;
+    let rawAnalysisRankings = [];
+    let rawAnalysisMatches = [];
+    let currentSector = 'ALL';
+    let globalScheduleData = [];
+    let currentUser = null;
+    let currentCoins = 0;
+    let lastBonusDate = null;
+
+    // --- Match Patterns ---
+    const patterns5 = [
+        [1, 2, 3, 4, 5],
+        [1, 5, 2, 3, 4],
+        [1, 4, 2, 5, 3],
+        [1, 3, 4, 5, 2],
+        [2, 4, 3, 5, 1]
+    ];
+    const patterns6 = [
+        [1, 2, 3, 4, 5, 6], // M1
+        [1, 5, 2, 6, 3, 4], // M2
+        [3, 5, 4, 6, 1, 2], // M3
+        [1, 3, 2, 5, 4, 6], // M4
+        [1, 4, 3, 6, 2, 5], // M5
+        [2, 4, 5, 6, 1, 3]  // M6
+    ];
+
+    window.onload = function() {
+        initAuth();
+        initSelectors();
+        
+        const today = new Date();
+        document.getElementById('matchDate').textContent = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        
+        fetchAnalysisData();
+        fetchScheduleData();
+        fetchWeather();
+        
+        const lastView = sessionStorage.getItem('lastView');
+        switchMainView(lastView || 'top');
+
+        setTimeout(() => {
+            document.getElementById('loadingScreen').style.opacity = 0;
+            setTimeout(() => { document.getElementById('loadingScreen').style.display = 'none'; }, 800);
+        }, 1000);
+    };
+
+    // --- Core Navigation ---
+    function switchMainView(viewName) {
+        sessionStorage.setItem('lastView', viewName);
+        document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+        const navs = document.querySelectorAll('.nav-item');
+        
+        if(viewName === 'top') navs[0].classList.add('active');
+        if(viewName === 'match') navs[1].classList.add('active');
+        if(viewName === 'dashboard') navs[2].classList.add('active');
+        if(viewName === 'ranking') navs[3].classList.add('active');
+        if(viewName === 'schedule') navs[4].classList.add('active');
+        
+        document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+        const targetSection = document.getElementById(`view-${viewName}`);
+        if(targetSection) targetSection.classList.add('active');
+        
+        const titles = { 'top': 'HOME', 'match': 'MATCH INPUT', 'dashboard': 'DASHBOARD', 'ranking': 'RANKING', 'schedule': 'MISSION SCHEDULE', 'mypage': 'MY PAGE' };
+        document.getElementById('pageTitle').textContent = titles[viewName] || 'TENNIS CHRONICLES';
+    }
+
+    function toggleSideMenu() {
+        document.getElementById('sideMenu').classList.toggle('open');
+    }
+    
+    function closeSideMenu(e) {
+        if(e.target.id === 'sideMenu') {
+            document.getElementById('sideMenu').classList.remove('open');
+        }
+    }
+
+    function selectAppMode(mode) {
+        document.getElementById('sideMenu').classList.remove('open');
+        document.querySelectorAll('.side-menu-content .menu-item').forEach(i => i.classList.remove('active'));
+        
+        if (mode === 'tennis') {
+            document.querySelector('.side-menu-content .menu-item:nth-child(1)').classList.add('active');
+            switchMainView('top');
+        }
+    }
+
+    function showMyPage() {
+        document.getElementById('sideMenu').classList.remove('open');
+        if (currentUser) {
+            switchMainView('mypage');
+            renderMyPage();
+        } else {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+    }
+
+    // --- Auth & Coins ---
+    function initAuth() {
+        const storedUser = localStorage.getItem(LOGIN_KEY);
+        if (storedUser) {
+            currentUser = JSON.parse(storedUser);
+            fetchCoinData(currentUser.name);
+        } else {
+            currentUser = null;
+        }
+        updateUserDisplay();
+    }
+
+    function fetchCoinData(userName) {
+        if (!COIN_MANAGER_URL) return;
+        fetch(`${COIN_MANAGER_URL}?user=${encodeURIComponent(userName)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    currentCoins = parseInt(data.coins);
+                    lastBonusDate = data.lastBonus;
+                    updateUserDisplay();
+                    if(document.getElementById('view-mypage').classList.contains('active')) renderMyPage();
+                }
+            }).catch(e => console.error(e));
+    }
+
+    function updateCoinData(amount, isBonus = false) {
+        if (!currentUser || !COIN_MANAGER_URL) return;
+        if (isBonus) {
+            currentCoins += amount;
+            updateUserDisplay();
+            if(document.getElementById('view-mypage').classList.contains('active')) renderMyPage();
+        }
+        fetch(COIN_MANAGER_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: currentUser.name, action: isBonus ? 'bonus' : 'update', amount: amount }),
+            keepalive: true
+        }).then(() => {
+            if(isBonus) {
+                const d = new Date();
+                lastBonusDate = `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}`;
+                renderMyPage();
+            }
+        }).catch(e => console.error(e));
+    }
+
+    window.onAuthDataLoaded = function(json) {
+        const pass = document.getElementById('loginPassInput').value;
+        const btn = document.querySelector('.btn-login');
+        if(document.getElementById('authScript')) document.getElementById('authScript').remove();
+
+        if (!json || !json.table || !json.table.rows) {
+            alert("DATA LOAD FAILED"); btn.textContent = "AUTHENTICATE"; btn.disabled = false; return;
+        }
+
+        let foundUser = null;
+        for (let row of json.table.rows) {
+            if (row.c[0] && row.c[1] && String(pass) === String(row.c[1].v)) {
+                foundUser = { name: row.c[0].v }; break;
+            }
+        }
+
+        if (foundUser) {
+            currentUser = foundUser;
+            localStorage.setItem(LOGIN_KEY, JSON.stringify(currentUser));
+            fetchCoinData(currentUser.name);
+            document.getElementById('loginModal').style.display = 'none';
+            showToast(`WELCOME, ${currentUser.name}`);
+            if(document.getElementById('view-mypage').classList.contains('active')) renderMyPage();
+        } else {
+            alert("INVALID PASSCODE");
+        }
+        btn.textContent = "AUTHENTICATE"; btn.disabled = false;
+        document.getElementById('loginPassInput').value = "";
+    };
+
+    function attemptLogin() {
+        const pass = document.getElementById('loginPassInput').value;
+        if (!pass) return;
+        const btn = document.querySelector('.btn-login');
+        btn.textContent = "VERIFYING..."; btn.disabled = true;
+
+        const script = document.createElement('script');
+        script.id = 'authScript';
+        script.src = `https://docs.google.com/spreadsheets/d/${AUTH_SHEET_ID}/gviz/tq?tqx=responseHandler:onAuthDataLoaded&gid=${AUTH_SHEET_GID}`;
+        script.onerror = function() { alert("AUTH ERROR"); btn.textContent = "AUTHENTICATE"; btn.disabled = false; };
+        document.body.appendChild(script);
+    }
+
+    function enableGuestMode() {
+        document.getElementById('loginModal').style.display = 'none';
+        if (!currentUser) showToast("GUEST MODE ACTIVE");
+    }
+
+    function handleLogout() {
+        if (confirm("LOGOUT?")) {
+            localStorage.removeItem(LOGIN_KEY);
+            currentUser = null; currentCoins = 0;
+            location.reload();
+        }
+    }
+
+    function updateUserDisplay() {
+        const disp = document.getElementById('currentUserDisplay');
+        if (currentUser) {
+            disp.textContent = `${currentUser.name} : 🪙${currentCoins.toLocaleString()}`;
+            disp.className = 'user-status-display status-user';
+        } else {
+            disp.textContent = 'GUEST';
+            disp.className = 'user-status-display status-guest';
+        }
+    }
+
+    function renderMyPage() {
+        if (!currentUser) return;
+        const name = currentUser.name;
+        const pStats = playerStatsGlobal[name] || { wins: 0, losses: 0, games: 0, mvpCount: 0, matches: 0 };
+        const rankInfo = getRankInfo(pStats.games);
+        
+        let expText = "MAX RANK", barW = 100;
+        if (rankInfo.next) {
+            const range = rankInfo.next.min - rankInfo.current.min;
+            const currentExp = pStats.games - rankInfo.current.min;
+            barW = Math.min((currentExp / range) * 100, 100);
+            expText = `NEXT RANK: ${rankInfo.next.min - pStats.games} EXP`;
+        }
+        
+        const canBonus = !lastBonusDate || lastBonusDate !== `${new Date().getFullYear()}-${('0'+(new Date().getMonth()+1)).slice(-2)}-${('0'+new Date().getDate()).slice(-2)}`;
+        const bonusBtnHtml = canBonus 
+            ? `<button class="btn-bonus" onclick="updateCoinData(500, true); showToast('BONUS CLAIMED'); this.disabled=true;">🎁 GET DAILY BONUS (+500)</button>`
+            : `<button class="btn-bonus" disabled>✅ RECEIVED (NEXT: 0:00)</button>`;
+        
+        const storedAvatar = localStorage.getItem(`avatar_${name}`);
+        const avatarStyle = storedAvatar ? `background-image: url(${storedAvatar}); background-size: cover; color: transparent;` : '';
+        const avatarContent = storedAvatar ? '' : name.charAt(0);
+        
+        document.getElementById('myPageContent').innerHTML = `
+            <div class="mypage-header">
+                <div class="mypage-avatar-large" style="${avatarStyle}" onclick="document.getElementById('avatarInput').click()">${avatarContent}</div>
+                <div class="mypage-name">${name}</div>
+                <div class="mypage-title">${rankInfo.current.icon} ${rankInfo.current.name}</div>
+            </div>
+            <div class="rank-info-area">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px; color:#aaa;"><span>EXP: ${pStats.games}</span><span>${expText}</span></div>
+                <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${barW}%"></div></div>
+            </div>
+            <div class="mypage-coin-area">
+                <div class="coin-val">${currentCoins.toLocaleString()}</div>
+                <div class="coin-label">CRYPTO COINS</div>
+                <div style="margin-top:10px;">${bonusBtnHtml}</div>
+            </div>
+            <div class="section-title">COMBAT STATS</div>
+            <div class="dashboard-grid">
+                <div class="stat-card"><div class="stat-label">VICTORIES</div><div class="stat-value highlight">${pStats.wins}</div></div>
+                <div class="stat-card"><div class="stat-label">MATCHES</div><div class="stat-value">${pStats.matches}</div></div>
+                <div class="stat-card"><div class="stat-label">WIN RATE</div><div class="stat-value">${pStats.matches > 0 ? ((pStats.wins/pStats.matches)*100).toFixed(1) : 0}%</div></div>
+                <div class="stat-card"><div class="stat-label">MVP</div><div class="stat-value">${pStats.mvpCount}</div></div>
+            </div>
+            <div style="text-align:center;"><button class="btn-logout" onclick="handleLogout()">LOGOUT</button></div>
+        `;
+    }
+
+    function handleAvatarUpload(input) {
+        if (input.files && input.files[0] && currentUser) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                localStorage.setItem(`avatar_${currentUser.name}`, e.target.result);
+                renderMyPage(); showToast("AVATAR UPDATED");
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- Input & Match Logic (5/6 Players) ---
+    function switchPlayerMode(mode) {
+        if(currentPlayerMode === mode) return;
+        currentPlayerMode = mode;
+        
+        document.getElementById('tab-mode-5').classList.toggle('active', mode === 5);
+        document.getElementById('tab-mode-6').classList.toggle('active', mode === 6);
+        
+        document.querySelectorAll('.p6-input').forEach(el => {
+            el.style.display = mode === 6 ? 'flex' : 'none';
+            if(mode === 5) el.querySelector('select').value = '-';
+        });
+        
+        updateSchedule('r1');
+        updateSchedule('r2');
+        saveState();
+    }
+
+    function initSelectors() {
+        ['r1', 'r2'].forEach(r => {
+            [1,2,3,4,5,6].forEach(i => {
+                const el = document.getElementById(`${r}_p${i}`);
+                if(!el) return;
+                const def = document.createElement("option"); def.value = "-"; def.text = "-"; el.appendChild(def);
+                members.forEach(m => { const op = document.createElement("option"); op.value = m; op.text = m; el.appendChild(op); });
+                el.value = "-";
+            });
+        });
+        if (!loadState()) { updateSchedule('r1'); updateSchedule('r2'); }
+    }
+
+    function toggleEditMode() {
+        if (!isEditMode) {
+            const pin = prompt("ENTER PASSCODE");
+            if (pin === "8047") { isEditMode = true; applyEditMode(); showToast("UNLOCKED"); }
+            else if (pin !== null) { alert("ACCESS DENIED"); }
+        } else { isEditMode = false; applyEditMode(); showToast("LOCKED"); }
+    }
+
+    function applyEditMode() {
+        const btn = document.getElementById('editBtn');
+        const resetBtn = document.getElementById('resetBtn'); 
+        const inputs = document.querySelectorAll('select.player-select, select#courtSelect, select.score-select');
+        const sendBtn = document.getElementById('sendButton');
+        
+        if (isEditMode) {
+            btn.textContent = "LOCK"; btn.classList.add("unlocked"); resetBtn.disabled = false; 
+            inputs.forEach(el => el.disabled = false); if(sendBtn) sendBtn.disabled = false;
+        } else {
+            btn.textContent = "EDIT"; btn.classList.remove("unlocked"); resetBtn.disabled = true; 
+            inputs.forEach(el => el.disabled = true); if(sendBtn) sendBtn.disabled = true;
+        }
+    }
+
+    function secureReset() {
+        if (!isEditMode) return;
+        if (confirm("RESET INPUT?")) {
+            document.querySelectorAll('.player-select, .score-select').forEach(s => s.value = "-");
+            document.getElementById('courtSelect').value = "-";
+            localStorage.removeItem(STORAGE_KEY);
+            updateSchedule('r1'); updateSchedule('r2');
+            showToast("RESET DONE");
+        }
+    }
+
+    function updatePlayerOptions(rp) {
+        const selects = []; 
+        for(let i=1; i<=currentPlayerMode; i++) selects.push(document.getElementById(`${rp}_p${i}`));
+        const vals = selects.map(s => s.value).filter(v => v !== "-");
+        selects.forEach(s => { 
+            s.querySelectorAll('option').forEach(o => { 
+                if (o.value === "-") return; 
+                o.disabled = (vals.includes(o.value) && s.value !== o.value); 
+            }); 
+        });
+    }
+
+    function createScoreSelect() {
+        const s = document.createElement("select"); s.className = "score-select"; s.disabled = !isEditMode;
+        s.appendChild(new Option("-", "-"));
+        for(let i=0; i<=4; i++) s.appendChild(new Option(i, i));
+        return s;
+    }
+
+    function checkWinner(sA, sB, cTA, cSA, cSB, cTB, rp) {
+        if(sA.value !== "-") sA.classList.add("filled"); else sA.classList.remove("filled");
+        if(sB.value !== "-") sB.classList.add("filled"); else sB.classList.remove("filled");
+        [cTA, cSA, cSB, cTB].forEach(c => c.classList.remove("winner", "loser"));
+        if(sA.value !== "-" && sB.value !== "-") {
+            const iA = parseInt(sA.value), iB = parseInt(sB.value);
+            if(iA > iB) { cTA.classList.add("winner"); cSA.classList.add("winner"); cTB.classList.add("loser"); cSB.classList.add("loser"); }
+            else if(iB > iA) { cTB.classList.add("winner"); cSB.classList.add("winner"); cTA.classList.add("loser"); cSA.classList.add("loser"); }
+        }
+        updateInputRanking(rp); saveState();
+    }
+
+    function updateSchedule(rp) {
+        const maxP = currentPlayerMode;
+        const pl = {}; for(let i=1; i<=maxP; i++) pl[i] = document.getElementById(`${rp}_p${i}`).value;
+        updatePlayerOptions(rp);
+        
+        const currentScores = [];
+        const oldTbody = document.getElementById(`${rp}_matchTableBody`);
+        if(oldTbody) {
+            Array.from(oldTbody.rows).forEach(r => {
+                const a = r.querySelector('select[data-type="scoreA"]');
+                const b = r.querySelector('select[data-type="scoreB"]');
+                currentScores.push({ a: a ? a.value : "-", b: b ? b.value : "-" });
+            });
+        }
+        
+        const tb = document.getElementById(`${rp}_matchTableBody`); tb.innerHTML = "";
+        const activePatterns = currentPlayerMode === 6 ? patterns6 : patterns5;
+        
+        activePatterns.forEach((pat, idx) => {
+            const row = document.createElement("tr");
+            row.dataset.pA1=pl[pat[0]]; row.dataset.pA2=pl[pat[1]]; row.dataset.pB1=pl[pat[2]]; row.dataset.pB2=pl[pat[3]];
+            
+            row.appendChild(Object.assign(document.createElement("td"), {textContent:`MATCH ${idx+1}`}));
+            row.appendChild(Object.assign(document.createElement("td"), {textContent:`${pl[pat[0]]} & ${pl[pat[1]]}`}));
+            
+            const cSA = document.createElement("td"); const sA = createScoreSelect(); sA.dataset.type="scoreA";
+            if(currentScores[idx]) sA.value = currentScores[idx].a;
+            cSA.appendChild(sA); row.appendChild(cSA);
+            
+            const probA = getWinProbability(pl[pat[0]], pl[pat[1]]);
+            const cVs = document.createElement("td");
+            cVs.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; width:100%;"><div style="font-size:0.6rem; color:#aaa; margin-bottom:2px;">WIN PROBABILITY</div><div style="display:flex; width:80%; height:4px; background:#333; border-radius:2px; overflow:hidden;"><div style="width:${probA}%; background:#00ffff; box-shadow:0 0 5px #00ffff;"></div><div style="width:${100-probA}%; background:#555;"></div></div><div style="display:flex; justify-content:space-between; width:80%; font-size:0.6rem; margin-top:2px;"><span style="color:#00ffff;">${probA}%</span><span style="color:#888;">${100-probA}%</span></div></div>`;
+            row.appendChild(cVs);
+            
+            const cSB = document.createElement("td"); const sB = createScoreSelect(); sB.dataset.type="scoreB";
+            if(currentScores[idx]) sB.value = currentScores[idx].b;
+            cSB.appendChild(sB); row.appendChild(cSB);
+            
+            const cTB = Object.assign(document.createElement("td"), {textContent:`${pl[pat[2]]} & ${pl[pat[3]]}`});
+            row.appendChild(cTB);
+            
+            const cR = document.createElement("td"); cR.className="rest-highlight";
+            if(currentPlayerMode === 6) {
+                const r1 = pl[pat[4]] !== "-" ? pl[pat[4]] : "-";
+                const r2 = pl[pat[5]] !== "-" ? pl[pat[5]] : "-";
+                cR.innerHTML = `${r1}<br>${r2}`;
+            } else {
+                cR.textContent = pl[pat[4]];
+            }
+            row.appendChild(cR);
+            
+            sA.onchange = () => checkWinner(sA, sB, row.cells[1], cSA, cSB, cTB, rp);
+            sB.onchange = () => checkWinner(sA, sB, row.cells[1], cSA, cSB, cTB, rp);
+            tb.appendChild(row);
+            checkWinner(sA, sB, row.cells[1], cSA, cSB, cTB, rp);
+        });
+        updateInputRanking(rp); saveState();
+    }
+
+    function calculateStats(rp) {
+        const maxP = currentPlayerMode;
+        const p={}; for(let i=1; i<=maxP; i++) p[i]=document.getElementById(`${rp}_p${i}`).value;
+        const st={};
+        for(let i=1; i<=maxP; i++) { if(p[i]!=="-") st[p[i]]={wins:0,losses:0,games:0}; }
+        
+        Array.from(document.getElementById(`${rp}_matchTableBody`).rows).forEach(row => {
+            const sA = row.querySelector('select[data-type="scoreA"]').value;
+            const sB = row.querySelector('select[data-type="scoreB"]').value;
+            if(sA!=="-" && sB!=="-"){
+                const iA=parseInt(sA), iB=parseInt(sB);
+                [row.dataset.pA1, row.dataset.pA2].forEach(n=>{if(st[n]) st[n].games+=iA});
+                [row.dataset.pB1, row.dataset.pB2].forEach(n=>{if(st[n]) st[n].games+=iB});
+                if(iA>iB){ [row.dataset.pA1, row.dataset.pA2].forEach(n=>{if(st[n]) st[n].wins++}); [row.dataset.pB1, row.dataset.pB2].forEach(n=>{if(st[n]) st[n].losses++}); }
+                else if(iB>iA){ [row.dataset.pB1, row.dataset.pB2].forEach(n=>{if(st[n]) st[n].wins++}); [row.dataset.pA1, row.dataset.pA2].forEach(n=>{if(st[n]) st[n].losses++}); }
+            }
+        });
+        return st;
+    }
+
+    function updateInputRanking(rp) {
+        const st = calculateStats(rp);
+        const pl = Object.keys(st).sort((a,b)=>{
+            const rA=(st[a].wins+st[a].losses)>0 ? st[a].wins/(st[a].wins+st[a].losses) : 0;
+            const rB=(st[b].wins+st[b].losses)>0 ? st[b].wins/(st[b].wins+st[b].losses) : 0;
+            if(rB!==rA) return rB-rA;
+            if(st[b].wins!==st[a].wins) return st[b].wins-st[a].wins;
+            return st[b].games-st[a].games;
+        });
+        const tb=document.getElementById(`${rp}_rankingTableBody`); tb.innerHTML="";
+        pl.forEach((n,i)=>{
+            const tot=st[n].wins+st[n].losses;
+            const rate=tot>0 ? ((st[n].wins/tot)*100).toFixed(0)+"%" : "-";
+            tb.innerHTML += `<tr><td class="${i===0?'rank-1':''}">${i+1}</td><td>${n}</td><td>${st[n].wins}-${st[n].losses}</td><td>${rate}</td><td>${st[n].games}</td></tr>`;
+        });
+        updateInputTotalRanking();
+    }
+
+    function updateInputTotalRanking() {
+        const s1 = calculateStats('r1'), s2 = calculateStats('r2');
+        let total = {};
+        new Set([...Object.keys(s1), ...Object.keys(s2)]).forEach(n => total[n] = {wins:0, losses:0, games:0});
+        [s1, s2].forEach(s => { for(let n in s) { total[n].wins+=s[n].wins; total[n].losses+=s[n].losses; total[n].games+=s[n].games; } });
+        
+        const sorted = Object.keys(total).sort((a,b)=>{
+            const rA=(total[a].wins+total[a].losses)>0 ? total[a].wins/(total[a].wins+total[a].losses) : 0;
+            const rB=(total[b].wins+total[b].losses)>0 ? total[b].wins/(total[b].wins+total[b].losses) : 0;
+            if(rB!==rA) return rB-rA;
+            if(total[b].wins!==total[a].wins) return total[b].wins-total[a].wins;
+            return total[b].games-total[a].games;
+        });
+        
+        const tb = document.getElementById('total_input_rankingTableBody'); tb.innerHTML="";
+        sorted.forEach((n,i)=>{
+            const tot=total[n].wins+total[n].losses;
+            const rate=tot>0 ? ((total[n].wins/tot)*100).toFixed(0)+"%" : "-";
+            tb.innerHTML += `<tr><td class="${i===0?'rank-1':''}">${i+1}</td><td>${n}</td><td>${total[n].wins}-${total[n].losses}</td><td>${rate}</td><td>${total[n].games}</td></tr>`;
+        });
+    }
+
+    function saveState() {
+        if(isLoading) return;
+        const court = document.getElementById('courtSelect').value;
+        const rd = {};
+        ['r1','r2'].forEach(r => {
+            const pl={}; for(let i=1; i<=currentPlayerMode; i++) pl[`p${i}`] = document.getElementById(`${r}_p${i}`).value;
+            const sc = Array.from(document.getElementById(`${r}_matchTableBody`).rows).map(row => ({
+                a: row.querySelector('select[data-type="scoreA"]').value, 
+                b: row.querySelector('select[data-type="scoreB"]').value
+            }));
+            rd[r]={players:pl, scores:sc};
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({meta:{court, mode:currentPlayerMode}, rounds:rd}));
+    }
+
+    function loadState() {
+        const json = localStorage.getItem(STORAGE_KEY); if(!json) return false;
+        try {
+            isLoading = true;
+            const data=JSON.parse(json);
+            if(data.meta && data.meta.court) document.getElementById('courtSelect').value=data.meta.court;
+            if(data.meta && data.meta.mode) switchPlayerMode(data.meta.mode);
+            
+            ['r1','r2'].forEach(r => {
+                if(data.rounds && data.rounds[r]) {
+                    const rd = data.rounds[r];
+                    for(let i=1; i<=currentPlayerMode; i++) {
+                        if(rd.players[`p${i}`]) document.getElementById(`${r}_p${i}`).value=rd.players[`p${i}`];
+                    }
+                    updateSchedule(r); 
+                    rd.scores.forEach((s, idx)=>{
+                        const rows = document.getElementById(`${r}_matchTableBody`).rows;
+                        if(rows[idx]) {
+                            const sA=rows[idx].querySelector('select[data-type="scoreA"]'), sB=rows[idx].querySelector('select[data-type="scoreB"]');
+                            sA.value=s.a; sB.value=s.b;
+                            checkWinner(sA, sB, rows[idx].cells[1], rows[idx].cells[2], rows[idx].cells[4], rows[idx].cells[5], r);
+                        }
+                    });
+                }
+            });
+            updatePlayerOptions('r1'); updatePlayerOptions('r2'); applyEditMode();
+            isLoading = false; return true;
+        } catch(e) { console.error(e); isLoading = false; return false; }
+    }
+
+    function sendToSpreadsheet() {
+        const btn = document.getElementById('sendButton'); btn.disabled = true; btn.textContent = "SENDING...";
+        const date = document.getElementById('matchDate').textContent;
+        const court = document.getElementById('courtSelect').value === '-' ? '未定' : document.getElementById('courtSelect').value;
+        let rankings = [], matches = [];
+        
+        ['r1', 'r2'].forEach(r => {
+            const rName = r==='r1' ? '1回戦' : '2回戦';
+            Array.from(document.getElementById(`${r}_rankingTableBody`).querySelectorAll('tr')).forEach(row => {
+                const cols = row.querySelectorAll('td');
+                if(cols.length>0) rankings.push({ rank: cols[0].textContent, name: cols[1].textContent + ` (${rName})`, win: cols[2].textContent.split('-')[0], lose: cols[2].textContent.split('-')[1], rate: cols[3].textContent, games: cols[4].textContent });
+            });
+            Array.from(document.getElementById(`${r}_matchTableBody`).rows).forEach((row, i) => {
+                if(row.dataset.pA1) {
+                    const sA = row.querySelector('select[data-type="scoreA"]').value, sB = row.querySelector('select[data-type="scoreB"]').value;
+                    if(sA!=="-" && sB!=="-") matches.push({ round: r==='r1'?1:2, no: i+1, pA1: row.dataset.pA1, pA2: row.dataset.pA2, scoreA: sA, scoreB: sB, pB1: row.dataset.pB1, pB2: row.dataset.pB2 });
+                }
+            });
+        });
+        
+        if(rankings.length===0) { showToast("NO DATA"); btn.disabled=false; btn.textContent="TRANSMIT DATA"; return; }
+        
+        fetch(GAS_WEB_APP_URL, {
+            method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ date, court, rankings, matches })
+        }).then(() => { showToast("SENT SUCCESSFULLY"); fetchAnalysisData(); })
+        .catch(e => { console.error(e); showToast("FAILED"); })
+        .finally(() => { btn.textContent="TRANSMIT DATA"; btn.disabled = !isEditMode; });
+    }
+
+    // --- Weather & Maps ---
+    function fetchWeather() {
+        fetch("https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo")
+        .then(res => res.json()).then(data => {
+            const c = document.getElementById('weather-forecast'); c.innerHTML = "";
+            for(let i=0; i<data.daily.time.length; i++) {
+                const icon = (code => { if(code===0) return "☀"; if(code<=3) return "☁"; if(code<=67) return "☂"; return "❓"; })(data.daily.weathercode[i]);
+                c.innerHTML += `<div class="weather-card ${i===0?'today':''}">
+                    <div class="weather-date">${data.daily.time[i].slice(5).replace('-','/')}</div>
+                    <div class="weather-icon">${icon}</div>
+                    <div class="weather-temp">${Math.round(data.daily.temperature_2m_max[i])}° / ${Math.round(data.daily.temperature_2m_min[i])}°</div>
+                    <div class="weather-rain">☂ ${data.daily.precipitation_probability_max[i]}%</div>
+                </div>`;
+            }
+        }).catch(() => document.getElementById('weather-forecast').innerHTML = '<div style="color:#666;font-size:0.8rem;">ERROR</div>');
+    }
+
+    const courts = {
+        "MOGUSA": { name: "百草", address: "日野市百草878-1", tel: "042-591-1212", hours: "9:00～18:00", cost: "¥4,500/h" },
+        "NERIMA": { name: "練馬", address: "練馬区南田中1-15-22", tel: "03-3904-7051", hours: "9:00～21:30", cost: "¥4,000/h" }
+    };
+
+    function renderMapInfo(val) {
+        const c = document.getElementById('mapContainer');
+        if (!courts[val]) { c.innerHTML = '<div class="empty-map-state">WAITING FOR NAVI INPUT...</div>'; return; }
+        const d = courts[val];
+        c.innerHTML = `<div class="info-card" style="margin-top:20px;">
+            <div class="info-row"><div class="info-label">SECTOR</div><div class="info-val" style="color:#00ffff;font-weight:bold;">${d.name}</div></div>
+            <div class="info-row"><div class="info-label">ADDRESS</div><div class="info-val">${d.address}</div></div>
+            <div class="info-row"><div class="info-label">TEL</div><div class="info-val">${d.tel}</div></div>
+            <div class="info-row"><div class="info-label">COST</div><div class="info-val">${d.cost}</div></div>
+        </div>`;
+    }
+
+    // --- Schedule ---
+    function fetchScheduleData() {
+        fetch(SCHEDULE_GAS_URL).then(res => res.json()).then(data => {
+            globalScheduleData = data;
+            if(data.length === 0) { document.getElementById('scheduleList').innerHTML = '<div style="padding:20px;text-align:center;color:#888;">予定なし</div>'; return; }
+            const tabs = document.getElementById('scheduleTabs'); tabs.innerHTML = "";
+            const months = [...new Set(data.map(i => i.fullDate.substring(0, 7)))];
+            months.forEach((m, i) => {
+                const btn = document.createElement('div'); btn.className = `month-tab ${i===0?'active':''}`;
+                btn.textContent = `${parseInt(m.split('-')[1])}月`;
+                btn.onclick = () => { document.querySelectorAll('.month-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active'); renderScheduleList(m); };
+                tabs.appendChild(btn); if(i===0) renderScheduleList(m);
+            });
+        }).catch(() => document.getElementById('scheduleList').innerHTML = '<div style="padding:20px;text-align:center;color:#888;">ERROR</div>');
+    }
+
+    function renderScheduleList(month) {
+        const list = document.getElementById('scheduleList'); list.innerHTML = "";
+        const items = globalScheduleData.filter(i => i.fullDate.startsWith(month));
+        let maxOk = Math.max(...items.map(i => i.counts.ok), 0);
+        items.forEach(item => {
+            const li = document.createElement('li'); li.className = `schedule-item ${item.counts.ok === maxOk && maxOk > 0 ? 'top-attendance' : ''}`;
+            li.onclick = () => {
+                document.getElementById('modalScheduleDate').innerText = item.date;
+                const ml = document.getElementById('modalScheduleList'); ml.innerHTML = "";
+                item.details.sort((a,b)=>({'ok':1,'maybe':2,'ng':3}[a.status]-{'ok':1,'maybe':2,'ng':3}[b.status])).forEach(m => {
+                    const icon = m.status==='ok'?'<span style="color:#00ffff">◯</span>':m.status==='maybe'?'<span style="color:#fff">△</span>':'<span style="color:#555">✕</span>';
+                    ml.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px 5px; border-bottom:1px solid rgba(255,255,255,0.05);"><div><span style="margin-right:10px;color:#888;">${m.name.charAt(0)}</span>${m.name}</div><div>${icon}</div></li>`;
+                });
+                document.getElementById('scheduleDetailModal').style.display = 'flex';
+            };
+            li.innerHTML = `<div class="schedule-date">${item.counts.ok===maxOk&&maxOk>0?'<span style="color:#ffd700;margin-right:5px;">👑</span>':''}${item.date}</div><div class="schedule-counts"><span style="color:#fff;font-weight:bold;">◯${item.counts.ok}</span><span style="color:#aaa;">△${item.counts.maybe}</span><span style="color:#666;">✕${item.counts.ng}</span></div>`;
+            list.appendChild(li);
+        });
+    }
+
+    // --- Analytics API & Charts ---
+    async function fetchAnalysisData() {
+        try {
+            const res = await fetch(GAS_WEB_APP_URL); const json = await res.json();
+            if(json.status === 'success') { rawAnalysisRankings = json.rankings; rawAnalysisMatches = json.matches; processAnalysisData(); }
+        } catch(e) { console.error(e); }
+    }
+
+    function filterRanking(s) { currentSector = s; processAnalysisData(); }
+
+    function processAnalysisData() {
+        let pStats = {}, mDates = new Set(), totalG = 0, logs = {};
+        let max = { wins:0, games:0, mvpCount:0, matches:0, sniper:0, clutchR:0, bestWR:0 };
+        
+        rawAnalysisRankings.slice(1).forEach(r => {
+            if(!r[0] || !r[3]) return;
+            const nm = String(r[3]).split(' (')[0], c = r[1], dObj = new Date(r[0]);
+            if(nm.includes("undefined") || nm.trim()==="" || (currentSector!=='ALL' && c!==currentSector)) return;
+            const d = `${dObj.getFullYear()}-${('0'+(dObj.getMonth()+1)).slice(-2)}-${('0'+dObj.getDate()).slice(-2)}`;
+            mDates.add(d); totalG += parseInt(r[7]);
+            if(!pStats[nm]) pStats[nm] = {name:nm, wins:0, losses:0, games:0, mvpCount:0, matches:0, history:[], sniperCount:0, clutchWins:0, clutchTotal:0};
+            pStats[nm].wins+=parseInt(r[4]); pStats[nm].losses+=parseInt(r[5]); pStats[nm].games+=parseInt(r[7]); pStats[nm].matches+=(parseInt(r[4])+parseInt(r[5]));
+            if(r[2]==1) pStats[nm].mvpCount++;
+            pStats[nm].history.push({date:d, rate:pStats[nm].matches>0 ? pStats[nm].wins/pStats[nm].matches*100 : 0});
+            if(!logs[`${d}_${c}`]) logs[`${d}_${c}`] = {date:d, court:c, records:[]};
+            logs[`${d}_${c}`].records.push({rank:r[2], name:nm, win:parseInt(r[4]), lose:parseInt(r[5])});
+        });
+
+        let pairStats = {};
+        if(rawAnalysisMatches) rawAnalysisMatches.slice(1).forEach(r => {
+            if(currentSector!=='ALL' && r[1]!==currentSector) return;
+            if(r[4]==="-") return;
+            const pA = [r[4],r[5]].sort().join(' & '), pB = [r[8],r[9]].sort().join(' & '), sA=parseInt(r[6]), sB=parseInt(r[7]);
+            if(!pairStats[pA]) pairStats[pA]={wins:0,losses:0,total:0}; if(!pairStats[pB]) pairStats[pB]={wins:0,losses:0,total:0};
+            pairStats[pA].total++; pairStats[pB].total++;
+            if(sA>sB) { pairStats[pA].wins++; pairStats[pB].losses++; } else if(sB>sA) { pairStats[pB].wins++; pairStats[pA].losses++; }
+        });
+
+        Object.values(pStats).forEach(p => {
+            if(p.wins>max.wins) max.wins=p.wins; if(p.games>max.games) max.games=p.games;
+            if(p.mvpCount>max.mvpCount) max.mvpCount=p.mvpCount; if(p.matches>max.matches) max.matches=p.matches;
+            const wr = p.matches>0 ? p.wins/p.matches : 0; if(wr>max.bestWR) max.bestWR=wr;
+        });
+        playerStatsGlobal = pStats; playerStatsGlobal._max = max;
+
+        document.getElementById('totalMissions').textContent = mDates.size;
+        document.getElementById('totalGames').textContent = totalG;
+        document.getElementById('avgGames').textContent = mDates.size > 0 ? (totalG / mDates.size).toFixed(1) : "0";
+
+        const sortedP = Object.values(pStats).sort((a,b)=>{ const rA=a.matches>0?a.wins/a.matches:0, rB=b.matches>0?b.wins/b.matches:0; return rA!==rB ? rB-rA : b.wins-a.wins; });
+        
+        const tb = document.getElementById('leaderboardBody'); tb.innerHTML="";
+        sortedP.forEach((p,i)=>{
+            if(!p.name) return;
+            const rk = getRankInfo(p.games).current;
+            tb.innerHTML += `<tr onclick="showPlayerModal('${p.name}')"><td class="${i===0?'rank-1':''}">${i+1}</td><td style="text-align:left;padding-left:10px;"><span class="rank-icon">${rk.icon}</span> ${p.name}</td><td>${p.wins}</td><td>${(p.matches>0?(p.wins/p.matches*100).toFixed(1):0)}%</td><td>${p.mvpCount}</td></tr>`;
+        });
+
+        const ptb = document.getElementById('pairRankingBody'); ptb.innerHTML="";
+        Object.entries(pairStats).map(([n,s])=>({name:n,...s})).filter(p=>p.total>=2).sort((a,b)=> (b.wins/b.total)-(a.wins/a.total) || b.wins-a.wins).forEach((p,i)=>{
+            const pct = (p.wins/p.total)*100;
+            ptb.innerHTML += `<tr><td class="${i===0?'rank-1':''}">${i+1}</td><td style="font-size:0.8rem;">${p.name}</td><td>${p.wins}-${p.losses}</td><td style="background:linear-gradient(90deg, rgba(0,200,255,0.15) ${pct}%, transparent ${pct}%)">${pct.toFixed(1)}%</td></tr>`;
+        });
+
+        if(winRateChartInstance) winRateChartInstance.destroy();
+        winRateChartInstance = new Chart(document.getElementById('winRateChart').getContext('2d'), {
+            type: 'bar', data: { labels: sortedP.slice(0,5).map(p=>p.name), datasets: [{ label:'勝率 (%)', data: sortedP.slice(0,5).map(p=>p.matches>0?p.wins/p.matches*100:0), backgroundColor:'rgba(255,255,255,0.1)', borderColor:'#fff', borderWidth:1 }] },
+            options: { responsive:true, maintainAspectRatio:false, scales:{y:{max:100,grid:{color:'rgba(255,255,255,0.05)'}},x:{grid:{display:false}}} }
+        });
+        
+        if(currentSector === 'ALL') { updateSchedule('r1'); updateSchedule('r2'); }
+        if(document.getElementById('view-mypage').classList.contains('active')) renderMyPage();
+    }
+
+    function getRankInfo(games) {
+        for(let i=CREW_RANKS.length-1; i>=0; i--) { if(games>=CREW_RANKS[i].min) return {current:CREW_RANKS[i], next:CREW_RANKS[i+1]||null}; }
+        return {current:CREW_RANKS[0], next:CREW_RANKS[1]};
+    }
+
+    function getPlayerWinRate(name) { return playerStatsGlobal[name] && playerStatsGlobal[name].matches > 0 ? playerStatsGlobal[name].wins / playerStatsGlobal[name].matches : 0.5; }
+    function getWinProbability(p1, p2) { return p1==="-"||p2==="-" ? 0 : Math.round(((getPlayerWinRate(p1) + getPlayerWinRate(p2))/2)*100); }
+
+    function showPlayerModal(name) {
+        const p = playerStatsGlobal[name], max = playerStatsGlobal._max; if(!p) return;
+        document.getElementById('modalPlayerName').textContent = p.name;
+        document.getElementById('playerModal').style.display = 'flex';
+        
+        if(radarChartInstance) radarChartInstance.destroy();
+        radarChartInstance = new Chart(document.getElementById('radarChart').getContext('2d'), {
+            type: 'radar', data: { labels: ['勝率', '勝利', 'MVP', '試合数', 'ゲーム'], datasets: [{ label: '能力', data: [ p.matches>0?(p.wins/p.matches*100):0, p.wins/max.wins*100, max.mvpCount>0?p.mvpCount/max.mvpCount*100:0, p.matches/max.matches*100, p.games/max.games*100 ], backgroundColor:'rgba(0,255,255,0.2)', borderColor:'#00ffff', borderWidth:2 }] },
+            options: { responsive:true, maintainAspectRatio:false, scales:{ r:{ min:0, max:100, ticks:{display:false}, grid:{color:'rgba(255,255,255,0.2)'}, pointLabels:{color:'#00ffff'} } } } 
+        });
+        
+        if(historyChartInstance) historyChartInstance.destroy();
+        historyChartInstance = new Chart(document.getElementById('historyChart').getContext('2d'), {
+            type: 'line', data: { labels: p.history.map(h=>h.date.slice(5)), datasets: [{ label:'推移', data: p.history.map(h=>h.rate), borderColor:'#f0f', backgroundColor:'rgba(255,0,255,0.1)', fill:true }] },
+            options: { responsive:true, maintainAspectRatio:false, scales:{y:{max:100,grid:{color:'rgba(255,255,255,0.1)'}},x:{grid:{display:false}}} }
+        });
+    }
+
+    function closeModal(e) { if(e.target.className === 'close-btn' || e.target.classList.contains('modal-content')===false) { document.getElementById('playerModal').style.display='none'; document.getElementById('scheduleDetailModal').style.display='none'; }}
+    function showToast(msg) { const t=document.getElementById("toast"); t.textContent=msg; t.className="show"; setTimeout(()=>{t.className=t.className.replace("show","")},3000); }
+</script>
+
+</body>
+</html>
