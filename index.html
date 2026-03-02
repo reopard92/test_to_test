@@ -1310,7 +1310,7 @@
                 const ml = document.getElementById('modalScheduleList'); ml.innerHTML = "";
                 item.details.sort((a,b)=>({'ok':1,'maybe':2,'ng':3}[a.status]-{'ok':1,'maybe':2,'ng':3}[b.status])).forEach(m => {
                     const icon = m.status==='ok'?'<span style="color:#00ffff">◯</span>':m.status==='maybe'?'<span style="color:#fff">△</span>':'<span style="color:#555">✕</span>';
-                    ml.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px 5px; border-bottom:1px solid rgba(255,255,255,0.05);"><div><span style="margin-right:10px;color:#888;">${m.name.charAt(0)}</span>${m.name}</div><div>${icon}</div></li>`;
+                    ml.innerHTML += `<li style="display:flex; justify-content:space-between; padding:10px 5px; border-bottom:1px solid rgba(255,255,255,0.05);"><div style="display:flex; align-items:center;"><span style="display:inline-flex; justify-content:center; align-items:center; width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.1); color:#fff; font-size:0.75rem; margin-right:10px; border:1px solid rgba(255,255,255,0.2);">${m.name.charAt(0)}</span>${m.name}</div><div>${icon}</div></li>`;
                 });
                 document.getElementById('scheduleDetailModal').style.display = 'flex';
             };
@@ -1490,7 +1490,7 @@
         if(historyChartInstance) historyChartInstance.destroy();
         historyChartInstance = new Chart(document.getElementById('historyChart').getContext('2d'), {
             type: 'line', data: { labels: p.history.map(h=>h.date.slice(5)), datasets: [{ label:'推移', data: p.history.map(h=>h.rate), borderColor:'#f0f', backgroundColor:'rgba(255,0,255,0.1)', fill:true }] },
-            options: { responsive:true, maintainAspectRatio:false, scales:{y:{max:100,grid:{color:'rgba(255,255,255,0.1)'}},x:{grid:{display:false}}} }
+            options: { responsive:true, maintainAspectRatio:false, scales:{y:{min:0, max:100, ticks:{stepSize:20}, grid:{color:'rgba(255,255,255,0.1)'}},x:{grid:{display:false}}} }
         });
     }
 
