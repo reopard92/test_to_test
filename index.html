@@ -133,6 +133,7 @@
         .side-menu-overlay.open .menu-item { opacity: 1; transform: translateX(0); }
         .side-menu-overlay.open .menu-item:nth-child(1) { transition-delay: 0.2s; }
         .side-menu-overlay.open .menu-item:nth-child(2) { transition-delay: 0.3s; }
+        .side-menu-overlay.open .menu-item:nth-child(3) { transition-delay: 0.4s; }
         .menu-item:hover { background: rgba(0,255,255,0.1); padding-left: 40px; color: #00ffff; }
         .menu-item.active { color: #00ffff; border-left: 4px solid #00ffff; background: rgba(0,255,255,0.05); }
 
@@ -392,6 +393,7 @@
 <div id="sideMenu" class="side-menu-overlay" onclick="closeSideMenu(event)">
     <div class="side-menu-content">
         <div class="menu-item active" onclick="selectAppMode('tennis')">🎾 TENNIS</div>
+        <div class="menu-item" onclick="window.location.href='https://reopard92.github.io/tennis02-GAME/'">🎮 GAME</div>
         <div class="menu-item" onclick="showMyPage()">👤 MY PAGE</div>
     </div>
 </div>
